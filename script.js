@@ -603,21 +603,24 @@ function createTaskElement(task, day) {
     }
     metaHTML += '</div>';
     
+    var titleHTML = linkifyText(task.title);
+    var descHTML = task.description ? linkifyText(task.description) : '';
+    var notesHTML = task.notes ? linkifyText(task.notes) : '';
+    
     taskDiv.innerHTML = 
         '<div class="task-header">' +
             '<div class="checkbox-wrapper">' +
                 '<input type="checkbox" class="task-checkbox" ' + (task.completed ? 'checked' : '') + ' onchange="toggleTaskComplete(\'' + day + '\', ' + task.id + ')">' +
             '</div>' +
             '<div class="task-content">' +
-                '<div class="task-title">' + escapeHtml(task.title) + '</div>' +
+                '<div class="task-title">' + titleHTML + '</div>' +
                 metaHTML +
             '</div>' +
         '</div>' +
-        (task.description ? '<div class="task-description">' + escapeHtml(task.description) + '</div>' : '') +
-        (task.notes ? '<div class="task-notes"><i class="fas fa-sticky-note"></i><span>' + escapeHtml(task.notes) + '</span></div>' : '') +
+        (task.description ? '<div class="task-description">' + descHTML + '</div>' : '') +
+        (task.notes ? '<div class="task-notes"><i class="fas fa-sticky-note"></i><span>' + notesHTML + '</span></div>' : '') +
         '<div class="task-actions">' +
-            '<button class="task-btn" onclick="editTask(\'' + day + '\', ' + task.id + ')"><i class="fas fa-edit"></i> Edit</button>' +
-            '<button class="task-btn delete" onclick="deleteTask(\'' + day + '\', ' + task.id + ')"><i class="fas fa-trash"></i> Delete</button>' +
+            '<button class="task-btn" onclick="showTaskDetails(\'' + day + '\', ' + task.id + ')"><i class="fas fa-info-circle"></i> See Details</button>' +
         '</div>';
     
     return taskDiv;
@@ -738,4 +741,185 @@ function escapeHtml(text) {
     return text.replace(/[&<>"']/g, function(m) {
         return map[m];
     });
+}
+
+// Function to detect and linkify URLs
+function linkifyText(text) {
+    if (!text) return '';
+    
+    // Escape HTML first
+    var escaped = escapeHtml(text);
+    
+    // URL regex pattern
+    var urlPattern = /(https?:\/\/[^\s]+)/g;
+    
+    // Replace URLs with clickable links
+    return escaped.replace(urlPattern, function(url) {
+        return '<a href="' + url + '" class="task-link" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">' + url + '</a>';
+    });
+}
+
+// Function to show task details modal
+function showTaskDetails(day, taskId) {
+    var task = null;
+    for (var i = 0; i < tasks[day].length; i++) {
+        if (tasks[day][i].id === taskId) {
+            task = tasks[day][i];
+            break;
+        }
+    }
+    if (!task) return;
+    
+    // Create modal if it doesn't exist
+    var existingModal = document.getElementById('taskDetailsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    var modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'taskDetailsModal';
+    
+    var priorityIcons = {
+        high: 'fa-exclamation-circle',
+        medium: 'fa-minus-circle',
+        low: 'fa-info-circle'
+    };
+    
+    var categoryIcons = {
+        work: 'fa-briefcase',
+        personal: 'fa-user',
+        health: 'fa-heartbeat',
+        study: 'fa-book',
+        other: 'fa-circle'
+    };
+    
+    var periodNames = {
+        'early-morning': 'Early Morning',
+        'morning': 'Morning',
+        'afternoon': 'Afternoon',
+        'evening': 'Evening',
+        'night': 'Night',
+        'late-night': 'Late Night'
+    };
+    
+    var periodIcons = {
+        'early-morning': 'fa-sunrise',
+        'morning': 'fa-sun',
+        'afternoon': 'fa-cloud-sun',
+        'evening': 'fa-sunset',
+        'night': 'fa-moon',
+        'late-night': 'fa-star'
+    };
+    
+    var detailsHTML = '<div class="modal-content task-details-modal">' +
+        '<div class="modal-header">' +
+            '<h3 class="modal-title">' +
+                '<i class="fas fa-info-circle"></i> Task Details' +
+            '</h3>' +
+            '<button class="close-btn" onclick="closeTaskDetailsModal()">' +
+                '<i class="fas fa-times"></i>' +
+            '</button>' +
+        '</div>' +
+        '<div class="task-details-content">' +
+            '<div class="detail-section">' +
+                '<h4><i class="fas fa-heading"></i> Title</h4>' +
+                '<p class="detail-value">' + linkifyText(task.title) + '</p>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<div class="detail-section">' +
+                    '<h4><i class="fas fa-calendar-day"></i> Day</h4>' +
+                    '<p class="detail-value">' + capitalizeFirstLetter(day) + '</p>' +
+                '</div>' +
+                '<div class="detail-section">' +
+                    '<h4><i class="fas fa-flag"></i> Priority</h4>' +
+                    '<p class="detail-value priority-' + task.priority + '">' +
+                        '<i class="fas ' + priorityIcons[task.priority] + '"></i> ' +
+                        capitalizeFirstLetter(task.priority) +
+                    '</p>' +
+                '</div>' +
+            '</div>' +
+            (task.time || task.dueDate || task.period ? 
+                '<div class="detail-row">' +
+                    (task.time ? '<div class="detail-section"><h4><i class="fas fa-clock"></i> Time</h4><p class="detail-value">' + task.time + '</p></div>' : '') +
+                    (task.dueDate ? '<div class="detail-section"><h4><i class="fas fa-calendar-alt"></i> Due Date</h4><p class="detail-value">' + task.dueDate + '</p></div>' : '') +
+                    (task.period ? '<div class="detail-section"><h4><i class="fas ' + periodIcons[task.period] + '"></i> Period</h4><p class="detail-value">' + periodNames[task.period] + '</p></div>' : '') +
+                '</div>' 
+            : '') +
+            '<div class="detail-row">' +
+                '<div class="detail-section">' +
+                    '<h4><i class="fas fa-tag"></i> Category</h4>' +
+                    '<p class="detail-value">' +
+                        '<i class="fas ' + categoryIcons[task.category] + '"></i> ' +
+                        capitalizeFirstLetter(task.category) +
+                    '</p>' +
+                '</div>' +
+                '<div class="detail-section">' +
+                    '<h4><i class="fas fa-check-circle"></i> Status</h4>' +
+                    '<p class="detail-value status-' + (task.completed ? 'completed' : 'active') + '">' +
+                        '<i class="fas ' + (task.completed ? 'fa-check-circle' : 'fa-clock') + '"></i> ' +
+                        (task.completed ? 'Completed' : 'Active') +
+                    '</p>' +
+                '</div>' +
+            '</div>' +
+            (task.description ? 
+                '<div class="detail-section">' +
+                    '<h4><i class="fas fa-align-left"></i> Description</h4>' +
+                    '<p class="detail-value description-text">' + linkifyText(task.description) + '</p>' +
+                '</div>'
+            : '') +
+            (task.notes ? 
+                '<div class="detail-section">' +
+                    '<h4><i class="fas fa-sticky-note"></i> Notes</h4>' +
+                    '<p class="detail-value notes-text">' + linkifyText(task.notes) + '</p>' +
+                '</div>'
+            : '') +
+        '</div>' +
+        '<div class="task-details-actions">' +
+            '<button class="btn btn-primary" onclick="editTaskFromDetails(\'' + day + '\', ' + task.id + ')">' +
+                '<i class="fas fa-edit"></i> Edit Task' +
+            '</button>' +
+            '<button class="btn btn-danger" onclick="deleteTaskFromDetails(\'' + day + '\', ' + task.id + ')">' +
+                '<i class="fas fa-trash"></i> Delete Task' +
+            '</button>' +
+        '</div>' +
+    '</div>';
+    
+    modal.innerHTML = detailsHTML;
+    document.body.appendChild(modal);
+    
+    // Add click outside to close
+    setTimeout(function() {
+        modal.classList.add('active');
+        modal.addEventListener('click', function(e) {
+            if (e.target.id === 'taskDetailsModal') {
+                closeTaskDetailsModal();
+            }
+        });
+    }, 10);
+}
+
+// Close task details modal
+function closeTaskDetailsModal() {
+    var modal = document.getElementById('taskDetailsModal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(function() {
+            if (modal.parentNode) {
+                modal.parentNode.removeChild(modal);
+            }
+        }, 300);
+    }
+}
+
+// Edit task from details modal
+function editTaskFromDetails(day, taskId) {
+    closeTaskDetailsModal();
+    editTask(day, taskId);
+}
+
+// Delete task from details modal
+function deleteTaskFromDetails(day, taskId) {
+    closeTaskDetailsModal();
+    deleteTask(day, taskId);
 }
