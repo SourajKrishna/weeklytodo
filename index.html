@@ -25,15 +25,15 @@
                     </div>
                 </div>
                 <div class="header-actions">
-                    <button class="header-btn" onclick="toggleTheme()" title="Toggle Theme">
-                        <i class="fas fa-moon" id="themeIcon"></i>
+                    <button class="header-btn focus-mode-btn" onclick="toggleFocusMode()" title="Focus Mode">
+                        <i class="fas fa-bullseye" id="focusIcon"></i>
                     </button>
-                    <button class="header-btn" onclick="importTasks()" title="Import Tasks">
-                        <i class="fas fa-upload"></i>
-                    </button>
-                    <button class="header-btn" onclick="exportTasks()" title="Export Tasks">
-                        <i class="fas fa-download"></i>
-                    </button>
+                    <div class="profile-display" onclick="openProfileModal()" title="Profile">
+                        <span class="profile-name" id="profileNameDisplay">Guest</span>
+                        <button class="header-btn profile-btn">
+                            <i class="fas fa-user-circle"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </header>
@@ -301,6 +301,100 @@
             </div>
         </div>
     </div>
+
+    <!-- Profile Modal -->
+    <div class="modal-overlay" id="profileModal">
+        <div class="modal-content profile-modal-content">
+            <div class="modal-header">
+                <div class="modal-title-wrapper">
+                    <i class="fas fa-user-circle"></i>
+                    <h3>Profile Settings</h3>
+                </div>
+                <button class="close-btn" onclick="closeProfileModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="profileForm" class="profile-form">
+                    <div class="form-group">
+                        <label for="profileName">
+                            <i class="fas fa-user"></i> Name
+                        </label>
+                        <input 
+                            type="text" 
+                            id="profileName" 
+                            placeholder="Enter your name"
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="profileEmail">
+                            <i class="fas fa-envelope"></i> Email
+                        </label>
+                        <input 
+                            type="email" 
+                            id="profileEmail" 
+                            placeholder="Enter your email"
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="profileAge">
+                            <i class="fas fa-birthday-cake"></i> Age
+                        </label>
+                        <input 
+                            type="number" 
+                            id="profileAge" 
+                            placeholder="Enter your age"
+                            min="13"
+                            max="120"
+                        >
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="saveProfile()">
+                        <i class="fas fa-save"></i> Save Profile
+                    </button>
+                </form>
+
+                <div class="profile-divider"></div>
+
+                <div class="profile-actions">
+                    <h4><i class="fas fa-cog"></i> Settings & Actions</h4>
+                    
+                    <div class="profile-action-buttons">
+                        <button class="profile-action-btn theme-toggle-btn" onclick="toggleTheme()">
+                            <i class="fas fa-moon" id="themeIconProfile"></i>
+                            <span id="themeText">Dark Mode</span>
+                        </button>
+                        <button class="profile-action-btn" onclick="importTasks()">
+                            <i class="fas fa-upload"></i>
+                            <span>Import Tasks</span>
+                        </button>
+                        <button class="profile-action-btn" onclick="exportTasks()">
+                            <i class="fas fa-download"></i>
+                            <span>Export Tasks</span>
+                        </button>
+                        <a href="feedback.html" class="profile-action-btn">
+                            <i class="fas fa-comment-dots"></i>
+                            <span>Send Feedback</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2026 Weekly Todo. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="tos.html" class="footer-link">
+                    <i class="fas fa-file-contract"></i> Terms of Service
+                </a>
+                <a href="privacy.html" class="footer-link">
+                    <i class="fas fa-shield-alt"></i> Privacy Policy
+                </a>
+            </div>
+        </div>
+    </footer>
 
     <script src="script.js"></script>
 </body>

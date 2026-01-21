@@ -15,6 +15,8 @@ var currentFilter = 'all';
 var currentTheme = 'light';
 var confirmCallback = null;
 var MAX_VISIBLE_TASKS = 4;
+var focusModeEnabled = false;
+var currentDayOfWeek = '';
 
 // Initialize app when DOM is ready
 window.addEventListener('load', function() {
@@ -22,6 +24,7 @@ window.addEventListener('load', function() {
     loadTheme();
     renderAllTasks();
     setupEventListeners();
+    updateProfileDisplay();
 });
 
 function setupEventListeners() {
@@ -64,23 +67,148 @@ function loadTheme() {
     currentTheme = savedTheme;
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-theme');
-        var themeIcon = document.getElementById('themeIcon');
-        if (themeIcon) {
-            themeIcon.className = 'fas fa-sun';
-        }
     }
+    updateThemeIcons();
 }
 
 function toggleTheme() {
     currentTheme = currentTheme === 'light' ? 'dark' : 'light';
     document.body.classList.toggle('dark-theme');
-    
-    var icon = document.getElementById('themeIcon');
-    if (icon) {
-        icon.className = currentTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-    }
-    
+    updateThemeIcons();
     localStorage.setItem('theme', currentTheme);
+}
+
+function updateThemeIcons() {
+    var iconProfile = document.getElementById('themeIconProfile');
+    var themeText = document.getElementById('themeText');
+    
+    if (iconProfile) {
+        iconProfile.className = currentTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+    if (themeText) {
+        themeText.textContent = currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+    }
+}
+
+// Focus Mode Functions
+function toggleFocusMode() {
+    focusModeEnabled = !focusModeEnabled;
+    
+    var focusIcon = document.getElementById('focusIcon');
+    var weekGrid = document.querySelector('.week-grid');
+    var container = document.querySelector('.container');
+    
+    if (focusModeEnabled) {
+        // Get current day of week
+        var days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        var today = new Date().getDay();
+        currentDayOfWeek = days[today];
+        
+        // Add focus mode classes
+        if (container) container.classList.add('focus-mode-active');
+        if (weekGrid) weekGrid.classList.add('focus-mode');
+        if (focusIcon) {
+            focusIcon.className = 'fas fa-times-circle';
+            focusIcon.parentElement.classList.add('active');
+        }
+        
+        // Hide all day cards except current day
+        var dayCards = document.querySelectorAll('.day-card');
+        for (var i = 0; i < dayCards.length; i++) {
+            var dayCard = dayCards[i];
+            var day = dayCard.getAttribute('data-day');
+            
+            if (day === currentDayOfWeek) {
+                dayCard.classList.add('focus-active');
+                dayCard.classList.remove('focus-hidden');
+            } else {
+                dayCard.classList.add('focus-hidden');
+                dayCard.classList.remove('focus-active');
+            }
+        }
+        
+        showNotification('Focus Mode: Showing ' + capitalizeFirstLetter(currentDayOfWeek) + ' tasks only', 'success');
+    } else {
+        // Remove focus mode classes
+        if (container) container.classList.remove('focus-mode-active');
+        if (weekGrid) weekGrid.classList.remove('focus-mode');
+        if (focusIcon) {
+            focusIcon.className = 'fas fa-bullseye';
+            focusIcon.parentElement.classList.remove('active');
+        }
+        
+        // Show all day cards
+        var dayCards = document.querySelectorAll('.day-card');
+        for (var i = 0; i < dayCards.length; i++) {
+            dayCards[i].classList.remove('focus-hidden', 'focus-active');
+        }
+        
+        showNotification('Focus Mode disabled', 'info');
+    }
+}
+
+// Profile Modal Functions
+function openProfileModal() {
+    var modal = document.getElementById('profileModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        loadProfile();
+    }
+}
+
+function closeProfileModal() {
+    var modal = document.getElementById('profileModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function loadProfile() {
+    var profile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+    var nameInput = document.getElementById('profileName');
+    var emailInput = document.getElementById('profileEmail');
+    var ageInput = document.getElementById('profileAge');
+    
+    if (nameInput && profile.name) nameInput.value = profile.name;
+    if (emailInput && profile.email) emailInput.value = profile.email;
+    if (ageInput && profile.age) ageInput.value = profile.age;
+}
+
+function saveProfile() {
+    var name = document.getElementById('profileName').value;
+    var email = document.getElementById('profileEmail').value;
+    var age = document.getElementById('profileAge').value;
+    
+    var profile = {
+        name: name,
+        email: email,
+        age: age
+    };
+    
+    localStorage.setItem('userProfile', JSON.stringify(profile));
+    updateProfileDisplay();
+    
+    var greeting = name ? 'Welcome, ' + name + '! Profile saved successfully!' : 'Profile saved successfully!';
+    showNotification(greeting, 'success');
+    
+    setTimeout(function() {
+        closeProfileModal();
+    }, 1500);
+}
+
+function updateProfileDisplay() {
+    var profile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+    var displayElement = document.getElementById('profileNameDisplay');
+    
+    if (displayElement) {
+        if (profile.name && profile.name.trim() !== '') {
+            displayElement.textContent = profile.name;
+            displayElement.style.display = 'block';
+        } else {
+            displayElement.textContent = 'Guest';
+            displayElement.style.display = 'block';
+        }
+    }
 }
 
 // Custom Notification System
@@ -103,7 +231,7 @@ function showNotification(message, type) {
     
     icon.className = 'notification-icon ' + type;
     icon.innerHTML = '<i class="' + iconClass + '"></i>';
-    messageEl.textContent = message;
+    messageEl.innerHTML = message;
     
     notification.classList.add('show');
     
@@ -276,6 +404,7 @@ function filterByPriority(priority) {
 
 // Drag and Drop functionality
 var draggedTask = null;
+var draggedElement = null;
 
 function setupDragAndDrop() {
     var days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -296,6 +425,7 @@ function handleDragStart(e) {
         id: parseInt(this.getAttribute('data-task-id')),
         day: this.getAttribute('data-day')
     };
+    draggedElement = this;
     this.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', this.innerHTML);
@@ -304,11 +434,18 @@ function handleDragStart(e) {
 function handleDragEnd(e) {
     this.classList.remove('dragging');
     
-    // Remove all drop-zone-active classes
+    // Remove all drop-zone-active classes and drag-over classes
     var containers = document.querySelectorAll('.tasks-container');
     for (var i = 0; i < containers.length; i++) {
         containers[i].classList.remove('drop-zone-active');
     }
+    
+    var taskItems = document.querySelectorAll('.task-item');
+    for (var i = 0; i < taskItems.length; i++) {
+        taskItems[i].classList.remove('drag-over-top', 'drag-over-bottom');
+    }
+    
+    draggedElement = null;
 }
 
 function handleDragOver(e) {
@@ -316,6 +453,30 @@ function handleDragOver(e) {
         e.preventDefault();
     }
     e.dataTransfer.dropEffect = 'move';
+    
+    // Handle reordering within same day
+    var target = e.target.closest('.task-item');
+    if (target && draggedElement && target !== draggedElement) {
+        var targetDay = target.getAttribute('data-day');
+        if (targetDay === draggedTask.day) {
+            var rect = target.getBoundingClientRect();
+            var midpoint = rect.top + rect.height / 2;
+            
+            // Remove previous indicators
+            var taskItems = document.querySelectorAll('.task-item');
+            for (var i = 0; i < taskItems.length; i++) {
+                taskItems[i].classList.remove('drag-over-top', 'drag-over-bottom');
+            }
+            
+            // Add indicator based on position
+            if (e.clientY < midpoint) {
+                target.classList.add('drag-over-top');
+            } else {
+                target.classList.add('drag-over-bottom');
+            }
+        }
+    }
+    
     return false;
 }
 
@@ -342,12 +503,31 @@ function handleDrop(e) {
     
     if (!draggedTask) return;
     
+    // Check if dropped on a task item (for reordering within same day)
+    var targetTaskElement = e.target.closest('.task-item');
+    
+    if (targetTaskElement && targetTaskElement !== draggedElement) {
+        var targetDay = targetTaskElement.getAttribute('data-day');
+        var sourceDay = draggedTask.day;
+        
+        // Reorder within same day
+        if (sourceDay === targetDay) {
+            var targetTaskId = parseInt(targetTaskElement.getAttribute('data-task-id'));
+            reorderTasksInDay(sourceDay, draggedTask.id, targetTaskId, e);
+            draggedTask = null;
+            return false;
+        }
+    }
+    
     // Get target day from container id
     var targetDay = this.id.replace('-tasks', '');
     var sourceDay = draggedTask.day;
     
-    // Don't do anything if dropped on same day
-    if (sourceDay === targetDay) return;
+    // Don't do anything if dropped on same day container (but not on a task)
+    if (sourceDay === targetDay && !targetTaskElement) {
+        draggedTask = null;
+        return false;
+    }
     
     // Find the task in source day
     var taskIndex = -1;
@@ -373,6 +553,54 @@ function handleDrop(e) {
     
     draggedTask = null;
     return false;
+}
+
+// Reorder tasks within the same day
+function reorderTasksInDay(day, draggedTaskId, targetTaskId, event) {
+    // Find indices
+    var draggedIndex = -1;
+    var targetIndex = -1;
+    
+    for (var i = 0; i < tasks[day].length; i++) {
+        if (tasks[day][i].id === draggedTaskId) {
+            draggedIndex = i;
+        }
+        if (tasks[day][i].id === targetTaskId) {
+            targetIndex = i;
+        }
+    }
+    
+    if (draggedIndex === -1 || targetIndex === -1) return;
+    
+    // Remove the dragged task
+    var task = tasks[day].splice(draggedIndex, 1)[0];
+    
+    // Determine where to insert based on mouse position
+    var targetElement = event.target.closest('.task-item');
+    if (targetElement) {
+        var rect = targetElement.getBoundingClientRect();
+        var midpoint = rect.top + rect.height / 2;
+        
+        // Recalculate target index after removal
+        if (draggedIndex < targetIndex) {
+            targetIndex--;
+        }
+        
+        // Insert above or below based on position
+        if (event.clientY < midpoint) {
+            tasks[day].splice(targetIndex, 0, task);
+        } else {
+            tasks[day].splice(targetIndex + 1, 0, task);
+        }
+    } else {
+        tasks[day].splice(targetIndex, 0, task);
+    }
+    
+    // Save and re-render
+    saveTasksToStorage();
+    renderTasks(day);
+    
+    showNotification('Task reordered successfully', 'success');
 }
 
 // Open task modal
@@ -630,7 +858,24 @@ function createTaskElement(task, day) {
 function toggleTaskComplete(day, taskId) {
     for (var i = 0; i < tasks[day].length; i++) {
         if (tasks[day][i].id === taskId) {
+            var wasCompleted = tasks[day][i].completed;
             tasks[day][i].completed = !tasks[day][i].completed;
+            
+            // Show appreciation when task is completed
+            if (!wasCompleted && tasks[day][i].completed) {
+                var profile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+                var name = profile.name && profile.name.trim() !== '' ? profile.name : '';
+                var messages = [
+                    'Great job' + (name ? ', ' + name : '') + '! Task completed! <i class="fas fa-party-horn"></i>',
+                    'Awesome work' + (name ? ', ' + name : '') + '! Keep it up! <i class="fas fa-dumbbell"></i>',
+                    'Well done' + (name ? ', ' + name : '') + '! You\'re crushing it! <i class="fas fa-star"></i>',
+                    'Fantastic' + (name ? ', ' + name : '') + '! Another one done! <i class="fas fa-sparkles"></i>',
+                    'Excellent' + (name ? ', ' + name : '') + '! You\'re on fire! <i class="fas fa-fire"></i>'
+                ];
+                var randomMessage = messages[Math.floor(Math.random() * messages.length)];
+                showNotification(randomMessage, 'success');
+            }
+            
             saveTasksToStorage();
             renderTasks(day);
             break;

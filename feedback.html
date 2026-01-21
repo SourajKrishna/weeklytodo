@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback - Weekly Todo</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%232c3e50;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%234a90e2;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23grad)'/%3E%3Cpath d='M25 30 L45 30 M25 45 L45 45 M25 60 L45 60' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='65' cy='30' r='8' fill='none' stroke='white' stroke-width='3'/%3E%3Cpath d='M60 30 L63 33 L70 26' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='65' cy='45' r='8' fill='none' stroke='white' stroke-width='3'/%3E%3Ccircle cx='65' cy='60' r='8' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="backconground-gradient"></div>
+    
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <i class="fas fa-comment-dots header-icon"></i>
+                    <div>
+                        <h1 class="title">Feedback</h1>
+                        <p class="subtitle">We'd love to hear from you</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="index.html" class="header-btn" title="Back to Home">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <div class="feedback-container">
+            <div class="feedback-form-wrapper">
+                <div class="feedback-intro">
+                    <i class="fas fa-paper-plane feedback-icon"></i>
+                    <h2>Send Us Your Feedback</h2>
+                    <p>Your feedback helps us improve. Please share your thoughts, suggestions, or report any issues.</p>
+                </div>
+                
+                <form class="feedback-form" id="feedbackForm" action="https://docs.google.com/forms/u/0/d/e/1FAIpQLSf5cRRe4s8-fl29kOZmjCKEsjIpdgSC6CrtmF6bxlNlQScvBg/formResponse" method="POST" target="hidden_iframe" onsubmit="handleFeedbackSubmit()">
+                    <div class="form-group">
+                        <label for="name">
+                            <i class="fas fa-user"></i> Name
+                        </label>
+                        <input 
+                            type="text" 
+                            id="name" 
+                            name="entry.1704051414" 
+                            placeholder="Enter your name" 
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">
+                            <i class="fas fa-envelope"></i> Email
+                        </label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="entry.1809102715" 
+                            placeholder="Enter your email" 
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="feedback">
+                            <i class="fas fa-comment"></i> Feedback
+                        </label>
+                        <textarea 
+                            id="feedback" 
+                            name="entry.276170309" 
+                            rows="6" 
+                            placeholder="Share your thoughts, suggestions, or report issues..." 
+                            required
+                        ></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Submit Feedback
+                        </button>
+                        <a href="index.html" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+
+                <div class="feedback-success" id="feedbackSuccess" style="display: none;">
+                    <i class="fas fa-check-circle"></i>
+                    <h3>Thank You!</h3>
+                    <p>Your feedback has been received. We appreciate your input!</p>
+                    <a href="index.html" class="btn btn-primary">
+                        <i class="fas fa-home"></i> Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2026 Weekly Todo. All rights reserved.</p>
+            <a href="index.html" class="feedback-link">
+                <i class="fas fa-home"></i> Home
+            </a>
+        </div>
+    </footer>
+
+    <!-- Hidden iframe to handle form submission without redirect -->
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="if(submitted) { showSuccessMessage(); }"></iframe>
+
+    <script>
+        let submitted = false;
+
+        function handleFeedbackSubmit() {
+            const form = document.getElementById('feedbackForm');
+            const successMessage = document.getElementById('feedbackSuccess');
+            
+            // Set submitted flag
+            submitted = true;
+            
+            // Hide form and show success message after a short delay
+            setTimeout(() => {
+                form.style.display = 'none';
+                document.querySelector('.feedback-intro').style.display = 'none';
+                successMessage.style.display = 'block';
+            }, 500);
+            
+            return true; // Allow form to submit
+        }
+
+        function showSuccessMessage() {
+            const form = document.getElementById('feedbackForm');
+            const successMessage = document.getElementById('feedbackSuccess');
+            
+            // Show success message
+            form.style.display = 'none';
+            document.querySelector('.feedback-intro').style.display = 'none';
+            successMessage.style.display = 'block';
+            
+            // Reset the submitted flag
+            submitted = false;
+        }
+    </script>
+</body>
+</html>
