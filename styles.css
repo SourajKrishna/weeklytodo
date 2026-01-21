@@ -519,6 +519,40 @@ body.dark-theme .day-card.focus-active {
     }
 }
 
+.calendar-btn {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.calendar-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.calendar-btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.calendar-btn:hover {
+    background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+    box-shadow: 0 8px 25px rgba(79, 172, 254, 0.4);
+    transform: translateY(-3px);
+}
+
 /* Day Cards */
 .day-card {
     background: rgba(255, 255, 255, 0.95);
