@@ -20,12 +20,129 @@ var currentDayOfWeek = '';
 
 // Initialize app when DOM is ready
 window.addEventListener('load', function() {
+    checkWeeklyReset();
     loadTasksFromStorage();
     loadTheme();
     renderAllTasks();
     setupEventListeners();
     updateProfileDisplay();
 });
+
+// Check if new week started and save report
+function checkWeeklyReset() {
+    var lastWeekStart = localStorage.getItem('lastWeekStart');
+    var currentWeekStart = getWeekStartDate();
+    
+    if (lastWeekStart && lastWeekStart !== currentWeekStart) {
+        // New week detected - save report and reset
+        saveWeeklyReport();
+        resetWeeklyData();
+    }
+    
+    localStorage.setItem('lastWeekStart', currentWeekStart);
+}
+
+function getWeekStartDate() {
+    var now = new Date();
+    var day = now.getDay();
+    var diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    var monday = new Date(now.setDate(diff));
+    monday.setHours(0, 0, 0, 0);
+    return monday.toISOString().split('T')[0];
+}
+
+function getWeekEndDate(startDate) {
+    var start = new Date(startDate);
+    var end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return end.toISOString().split('T')[0];
+}
+
+function saveWeeklyReport() {
+    var stats = calculateWeekStats();
+    var weekStart = localStorage.getItem('lastWeekStart') || getWeekStartDate();
+    
+    var report = {
+        id: Date.now(),
+        weekStart: weekStart,
+        weekEnd: getWeekEndDate(weekStart),
+        stats: stats,
+        savedAt: new Date().toISOString()
+    };
+    
+    var reports = JSON.parse(localStorage.getItem('weeklyReports') || '[]');
+    reports.unshift(report);
+    
+    if (reports.length > 10) {
+        reports = reports.slice(0, 10);
+    }
+    
+    localStorage.setItem('weeklyReports', JSON.stringify(reports));
+}
+
+function calculateWeekStats() {
+    var stats = {
+        totalTasks: 0,
+        completedTasks: 0,
+        activeTasks: 0,
+        completionRate: 0,
+        byDay: {},
+        byCategory: {},
+        byPriority: { high: 0, medium: 0, low: 0 }
+    };
+    
+    var days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    
+    days.forEach(function(day) {
+        var dayTasks = tasks[day] || [];
+        var dayCompleted = 0;
+        
+        dayTasks.forEach(function(task) {
+            stats.totalTasks++;
+            
+            if (task.completed) {
+                stats.completedTasks++;
+                dayCompleted++;
+            } else {
+                stats.activeTasks++;
+            }
+            
+            var category = task.category || 'other';
+            stats.byCategory[category] = (stats.byCategory[category] || 0) + 1;
+            
+            if (task.priority) {
+                stats.byPriority[task.priority]++;
+            }
+        });
+        
+        stats.byDay[day] = {
+            total: dayTasks.length,
+            completed: dayCompleted,
+            rate: dayTasks.length > 0 ? Math.round((dayCompleted / dayTasks.length) * 100) : 0
+        };
+    });
+    
+    stats.completionRate = stats.totalTasks > 0 
+        ? Math.round((stats.completedTasks / stats.totalTasks) * 100) 
+        : 0;
+    
+    return stats;
+}
+
+function resetWeeklyData() {
+    // Keep the structure but clear tasks
+    tasks = {
+        monday: [],
+        tuesday: [],
+        wednesday: [],
+        thursday: [],
+        friday: [],
+        saturday: [],
+        sunday: []
+    };
+    saveTasksToStorage();
+    renderAllTasks();
+}
 
 function setupEventListeners() {
     // Setup form submission
