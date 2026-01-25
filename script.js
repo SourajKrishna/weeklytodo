@@ -18,6 +18,51 @@ var MAX_VISIBLE_TASKS = 4;
 var focusModeEnabled = false;
 var currentDayOfWeek = '';
 
+// Sound Effects
+var sounds = {
+    click: new Audio('data:audio/wav;base64,UklGRhwAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='),
+    complete: createSound(800, 0.1, 'sine'),
+    delete: createSound(300, 0.15, 'square'),
+    drag: createSound(600, 0.08, 'sine'),
+    drop: createSound(500, 0.12, 'triangle'),
+    add: createSound(700, 0.1, 'sine')
+};
+
+function createSound(frequency, duration, type) {
+    return function() {
+        try {
+            var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            var oscillator = audioContext.createOscillator();
+            var gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        } catch (e) {
+            // Silently fail if audio context is not available
+        }
+    };
+}
+
+function playSound(soundName) {
+    if (sounds[soundName]) {
+        if (typeof sounds[soundName] === 'function') {
+            sounds[soundName]();
+        } else {
+            sounds[soundName].currentTime = 0;
+            sounds[soundName].play().catch(function() {});
+        }
+    }
+}
+
 // Initialize app when DOM is ready
 window.addEventListener('load', function() {
     checkWeeklyReset();
@@ -538,6 +583,7 @@ function setupDragAndDrop() {
 }
 
 function handleDragStart(e) {
+    playSound('drag');
     draggedTask = {
         id: parseInt(this.getAttribute('data-task-id')),
         day: this.getAttribute('data-day')
@@ -616,6 +662,7 @@ function handleDrop(e) {
         e.preventDefault();
     }
     
+    playSound('drop');
     this.classList.remove('drop-zone-active');
     
     if (!draggedTask) return;
@@ -746,11 +793,19 @@ function openTaskModal(day) {
     if (prioritySelect) prioritySelect.value = 'medium';
     if (categorySelect) categorySelect.value = 'work';
     
+    // Clear subtasks
+    var subtasksContainer = document.getElementById('subtasksContainer');
+    if (subtasksContainer) {
+        subtasksContainer.innerHTML = '';
+    }
+    
     // Show modal with animation
     var modal = document.getElementById('taskModal');
     if (modal) {
         modal.classList.add('active');
     }
+    
+    playSound('click');
 }
 
 // Close task modal
@@ -760,6 +815,67 @@ function closeTaskModal() {
         modal.classList.remove('active');
     }
     editingTaskId = null;
+}
+
+// Subtask Management
+function addSubtaskInput(text) {
+    var container = document.getElementById('subtasksContainer');
+    if (!container) return;
+    
+    var wrapper = document.createElement('div');
+    wrapper.className = 'subtask-input-wrapper';
+    
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Enter subtask...';
+    input.className = 'subtask-input';
+    if (text) input.value = text;
+    
+    var removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn-remove-subtask';
+    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    removeBtn.onclick = function() {
+        playSound('click');
+        wrapper.remove();
+    };
+    
+    wrapper.appendChild(input);
+    wrapper.appendChild(removeBtn);
+    container.appendChild(wrapper);
+    
+    playSound('click');
+}
+
+function getSubtasksFromForm() {
+    var inputs = document.querySelectorAll('#subtasksContainer .subtask-input');
+    var subtasks = [];
+    
+    for (var i = 0; i < inputs.length; i++) {
+        var text = inputs[i].value.trim();
+        if (text) {
+            subtasks.push({
+                id: Date.now() + i,
+                text: text,
+                completed: false
+            });
+        }
+    }
+    
+    return subtasks;
+}
+
+function loadSubtasksToForm(subtasks) {
+    var container = document.getElementById('subtasksContainer');
+    if (container) {
+        container.innerHTML = '';
+    }
+    
+    if (subtasks && subtasks.length > 0) {
+        for (var i = 0; i < subtasks.length; i++) {
+            addSubtaskInput(subtasks[i].text);
+        }
+    }
 }
 
 // Handle form submission
@@ -785,6 +901,7 @@ function handleFormSubmit(e) {
         period: taskPeriod ? taskPeriod.value : '',
         description: taskDescription ? taskDescription.value : '',
         notes: taskNotes ? taskNotes.value : '',
+        subtasks: getSubtasksFromForm(),
         completed: false
     };
     
@@ -799,11 +916,26 @@ function handleFormSubmit(e) {
         }
         if (index !== -1) {
             taskData.completed = tasks[currentDay][index].completed;
+            // Preserve existing subtask completion states
+            if (tasks[currentDay][index].subtasks) {
+                var oldSubtasks = tasks[currentDay][index].subtasks;
+                for (var i = 0; i < taskData.subtasks.length; i++) {
+                    for (var j = 0; j < oldSubtasks.length; j++) {
+                        if (taskData.subtasks[i].text === oldSubtasks[j].text) {
+                            taskData.subtasks[i].completed = oldSubtasks[j].completed;
+                            taskData.subtasks[i].id = oldSubtasks[j].id;
+                            break;
+                        }
+                    }
+                }
+            }
             tasks[currentDay][index] = taskData;
         }
+        playSound('click');
     } else {
         // Add new task
         tasks[currentDay].push(taskData);
+        playSound('add');
     }
     
     saveTasksToStorage();
@@ -952,6 +1084,23 @@ function createTaskElement(task, day) {
     var descHTML = task.description ? linkifyText(task.description) : '';
     var notesHTML = task.notes ? linkifyText(task.notes) : '';
     
+    // Build subtasks HTML
+    var subtasksHTML = '';
+    if (task.subtasks && task.subtasks.length > 0) {
+        subtasksHTML = '<div class="task-subtasks">';
+        for (var i = 0; i < task.subtasks.length; i++) {
+            var subtask = task.subtasks[i];
+            subtasksHTML += 
+                '<div class="subtask-item' + (subtask.completed ? ' completed' : '') + '">' +
+                    '<input type="checkbox" class="subtask-checkbox" ' + 
+                    (subtask.completed ? 'checked' : '') + 
+                    ' onchange="toggleSubtaskComplete(\'' + day + '\', ' + task.id + ', ' + subtask.id + ')">' +
+                    '<span class="subtask-text">' + linkifyText(subtask.text) + '</span>' +
+                '</div>';
+        }
+        subtasksHTML += '</div>';
+    }
+    
     taskDiv.innerHTML = 
         '<div class="task-header">' +
             '<div class="checkbox-wrapper">' +
@@ -963,6 +1112,7 @@ function createTaskElement(task, day) {
             '</div>' +
         '</div>' +
         (task.description ? '<div class="task-description">' + descHTML + '</div>' : '') +
+        subtasksHTML +
         (task.notes ? '<div class="task-notes"><i class="fas fa-sticky-note"></i><span>' + notesHTML + '</span></div>' : '') +
         '<div class="task-actions">' +
             '<button class="task-btn" onclick="showTaskDetails(\'' + day + '\', ' + task.id + ')"><i class="fas fa-info-circle"></i> See Details</button>' +
@@ -973,6 +1123,7 @@ function createTaskElement(task, day) {
 
 // Toggle task completion
 function toggleTaskComplete(day, taskId) {
+    playSound('complete');
     for (var i = 0; i < tasks[day].length; i++) {
         if (tasks[day][i].id === taskId) {
             var wasCompleted = tasks[day][i].completed;
@@ -995,6 +1146,27 @@ function toggleTaskComplete(day, taskId) {
             
             saveTasksToStorage();
             renderTasks(day);
+            break;
+        }
+    }
+}
+
+// Toggle subtask completion
+function toggleSubtaskComplete(day, taskId, subtaskId) {
+    playSound('click');
+    for (var i = 0; i < tasks[day].length; i++) {
+        if (tasks[day][i].id === taskId) {
+            var task = tasks[day][i];
+            if (task.subtasks) {
+                for (var j = 0; j < task.subtasks.length; j++) {
+                    if (task.subtasks[j].id === subtaskId) {
+                        task.subtasks[j].completed = !task.subtasks[j].completed;
+                        saveTasksToStorage();
+                        renderTasks(day);
+                        return;
+                    }
+                }
+            }
             break;
         }
     }
@@ -1033,6 +1205,9 @@ function editTask(day, taskId) {
     if (taskDescription) taskDescription.value = task.description || '';
     if (taskNotes) taskNotes.value = task.notes || '';
     
+    // Load subtasks
+    loadSubtasksToForm(task.subtasks);
+    
     // Update modal title
     var modalTitle = document.getElementById('modalTitle');
     var submitBtn = document.getElementById('submitBtn');
@@ -1049,12 +1224,16 @@ function editTask(day, taskId) {
     if (modal) {
         modal.classList.add('active');
     }
+    
+    playSound('click');
 }
 
 // Delete task
 function deleteTask(day, taskId) {
     showConfirm('Are you sure you want to delete this task?', function(confirmed) {
         if (!confirmed) return;
+        
+        playSound('delete');
         
         var newTasks = [];
         for (var i = 0; i < tasks[day].length; i++) {
