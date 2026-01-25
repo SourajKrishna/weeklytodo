@@ -17,6 +17,7 @@ var confirmCallback = null;
 var MAX_VISIBLE_TASKS = 4;
 var focusModeEnabled = false;
 var currentDayOfWeek = '';
+var inboxViewEnabled = false;
 
 // Sound Effects
 var sounds = {
@@ -255,10 +256,22 @@ function updateThemeIcons() {
 // Focus Mode Functions
 function toggleFocusMode() {
     focusModeEnabled = !focusModeEnabled;
+    inboxViewEnabled = false;
     
     var focusIcon = document.getElementById('focusIcon');
     var weekGrid = document.querySelector('.week-grid');
     var container = document.querySelector('.container');
+    
+    // Hide inbox container if it exists
+    var inboxContainer = document.getElementById('inbox-container');
+    if (inboxContainer) {
+        inboxContainer.style.display = 'none';
+    }
+    
+    // Show week grid
+    if (weekGrid) {
+        weekGrid.style.display = 'grid';
+    }
     
     if (focusModeEnabled) {
         // Get current day of week
@@ -530,6 +543,19 @@ function filterTasks() {
 
 function filterByStatus(status) {
     currentFilter = status;
+    inboxViewEnabled = false;
+    
+    // Show week grid if it was hidden
+    var weekGrid = document.querySelector('.week-grid');
+    if (weekGrid) {
+        weekGrid.style.display = 'grid';
+    }
+    
+    // Hide inbox container if it exists
+    var inboxContainer = document.getElementById('inbox-container');
+    if (inboxContainer) {
+        inboxContainer.style.display = 'none';
+    }
     
     // Update active filter button
     var filterBtns = document.querySelectorAll('.filter-btn');
@@ -548,6 +574,19 @@ function filterByStatus(status) {
 
 function filterByPriority(priority) {
     currentFilter = priority;
+    inboxViewEnabled = false;
+    
+    // Show week grid if it was hidden
+    var weekGrid = document.querySelector('.week-grid');
+    if (weekGrid) {
+        weekGrid.style.display = 'grid';
+    }
+    
+    // Hide inbox container if it exists
+    var inboxContainer = document.getElementById('inbox-container');
+    if (inboxContainer) {
+        inboxContainer.style.display = 'none';
+    }
     
     // Update active filter button
     var filterBtns = document.querySelectorAll('.filter-btn');
@@ -562,6 +601,119 @@ function filterByPriority(priority) {
     }
     
     filterTasks();
+}
+
+// INBOX View - Show all tasks from all days
+function showInboxView() {
+    inboxViewEnabled = true;
+    currentFilter = 'all';
+    
+    // Update active filter button
+    var filterBtns = document.querySelectorAll('.filter-btn');
+    for (var i = 0; i < filterBtns.length; i++) {
+        filterBtns[i].classList.remove('active');
+    }
+    
+    // Add active class to INBOX button
+    var inboxBtn = document.querySelector('[data-filter="inbox"]');
+    if (inboxBtn) {
+        inboxBtn.classList.add('active');
+    }
+    
+    // Hide the week grid
+    var weekGrid = document.querySelector('.week-grid');
+    if (weekGrid) {
+        weekGrid.style.display = 'none';
+    }
+    
+    // Create or get inbox container
+    var inboxContainer = document.getElementById('inbox-container');
+    if (!inboxContainer) {
+        inboxContainer = document.createElement('div');
+        inboxContainer.id = 'inbox-container';
+        inboxContainer.className = 'inbox-container';
+        weekGrid.parentNode.insertBefore(inboxContainer, weekGrid.nextSibling);
+    }
+    
+    inboxContainer.style.display = 'block';
+    inboxContainer.innerHTML = '';
+    
+    // Create inbox header
+    var inboxHeader = document.createElement('div');
+    inboxHeader.className = 'inbox-header';
+    inboxHeader.innerHTML = '<h2><i class="fas fa-inbox"></i> INBOX - All Tasks</h2>';
+    inboxContainer.appendChild(inboxHeader);
+    
+    // Collect all tasks from all days
+    var allTasks = [];
+    var days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    var dayNames = {
+        'monday': 'Monday',
+        'tuesday': 'Tuesday',
+        'wednesday': 'Wednesday',
+        'thursday': 'Thursday',
+        'friday': 'Friday',
+        'saturday': 'Saturday',
+        'sunday': 'Sunday'
+    };
+    
+    for (var i = 0; i < days.length; i++) {
+        var day = days[i];
+        var dayTasks = tasks[day];
+        
+        for (var j = 0; j < dayTasks.length; j++) {
+            allTasks.push({
+                task: dayTasks[j],
+                day: day,
+                dayName: dayNames[day]
+            });
+        }
+    }
+    
+    // Show count
+    var countDiv = document.createElement('div');
+    countDiv.className = 'inbox-count';
+    var completedCount = 0;
+    for (var i = 0; i < allTasks.length; i++) {
+        if (allTasks[i].task.completed) {
+            completedCount++;
+        }
+    }
+    countDiv.textContent = allTasks.length + ' total task' + (allTasks.length !== 1 ? 's' : '') + ' • ' + completedCount + ' completed';
+    inboxContainer.appendChild(countDiv);
+    
+    // Create tasks list
+    var tasksList = document.createElement('div');
+    tasksList.className = 'inbox-tasks-list';
+    
+    if (allTasks.length === 0) {
+        var emptyMsg = document.createElement('div');
+        emptyMsg.className = 'empty-inbox-message';
+        emptyMsg.innerHTML = '<i class="fas fa-inbox" style=\"font-size: 48px; opacity: 0.3; margin-bottom: 10px;\"></i><p>No tasks yet. Start adding tasks to your days!</p>';
+        tasksList.appendChild(emptyMsg);
+    } else {
+        for (var i = 0; i < allTasks.length; i++) {
+            var taskData = allTasks[i];
+            var taskElement = createTaskElement(taskData.task, taskData.day);
+            
+            // Add day badge
+            var dayBadge = document.createElement('span');
+            dayBadge.className = 'task-day-badge';
+            dayBadge.textContent = taskData.dayName;
+            
+            // Insert day badge after checkbox
+            var checkbox = taskElement.querySelector('.task-checkbox');
+            if (checkbox && checkbox.parentNode) {
+                checkbox.parentNode.insertBefore(dayBadge, checkbox.nextSibling);
+            }
+            
+            tasksList.appendChild(taskElement);
+        }
+    }
+    
+    inboxContainer.appendChild(tasksList);
+    
+    showNotification('INBOX: Showing all ' + allTasks.length + ' tasks', 'success');
 }
 
 // Drag and Drop functionality

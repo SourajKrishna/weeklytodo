@@ -51,6 +51,9 @@
                 <input type="text" id="searchInput" placeholder="Search tasks..." onkeyup="filterTasks()">
             </div>
             <div class="filter-buttons">
+                <button class="filter-btn" onclick="showInboxView()" data-filter="inbox">
+                    <i class="fas fa-inbox"></i> INBOX
+                </button>
                 <button class="filter-btn active" onclick="filterByStatus('all')" data-filter="all">
                     <i class="fas fa-list"></i> All
                 </button>

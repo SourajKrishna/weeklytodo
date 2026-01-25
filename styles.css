@@ -502,6 +502,130 @@ body.dark-theme .day-card.focus-active {
     }
 }
 
+/* INBOX View Styles */
+.inbox-container {
+    display: none;
+    animation: fadeIn 0.6s ease-out;
+    margin-top: 1.5rem;
+}
+
+.inbox-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 20px;
+    margin-bottom: 1.5rem;
+    box-shadow: 
+        var(--shadow-light),
+        var(--shadow-dark),
+        0 10px 40px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.inbox-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    animation: inboxGlow 8s linear infinite;
+}
+
+@keyframes inboxGlow {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.inbox-header h2 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.inbox-header i {
+    font-size: 2.5rem;
+    animation: inboxBounce 2s ease-in-out infinite;
+}
+
+@keyframes inboxBounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.inbox-count {
+    background: var(--bg-primary);
+    border-radius: 15px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+    display: inline-block;
+}
+
+.inbox-tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.empty-inbox-message {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-primary);
+    border-radius: 20px;
+    box-shadow: var(--shadow-inset-light), var(--shadow-inset-dark);
+}
+
+.empty-inbox-message p {
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.task-day-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+body.dark-theme .inbox-count {
+    background: var(--bg-secondary);
+}
+
+body.dark-theme .empty-inbox-message {
+    background: var(--bg-secondary);
+}
+
 .focus-mode-btn {
     position: relative;
     overflow: hidden;
