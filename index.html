@@ -416,6 +416,113 @@
         </div>
     </footer>
 
+    <!-- Floating AI Creator Button -->
+    <a href="ai-creator.html" class="ai-chat-button" id="aiChatButton">
+        <i class="fas fa-brain"></i>
+        <span class="ai-badge" id="aiChatBadge">AI</span>
+    </a>
+
+    <!-- AI Chat Window -->
+    <div class="ai-chat-window" id="aiChatWindow">
+        <div class="ai-chat-header">
+            <div class="ai-chat-header-left">
+                <div class="ai-avatar premium-avatar">
+                    <i class="fas fa-brain"></i>
+                    <div class="ai-pulse-ring"></div>
+                </div>
+                <div class="ai-header-info">
+                    <h3><i class="fas fa-sparkles"></i> AI Task Creator</h3>
+                    <p class="ai-status"><span class="status-dot"></span> Intelligent & Ready</p>
+                </div>
+            </div>
+            <button class="ai-chat-close" onclick="toggleAIChat()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="ai-chat-messages" id="aiChatMessages">
+            <div class="ai-message ai-bot-message" id="welcomeMessage">
+                <div class="ai-message-avatar">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div class="ai-message-content premium-message">
+                    <div class="premium-welcome-header">
+                        <div class="welcome-icon">
+                            <i class="fas fa-magic"></i>
+                        </div>
+                        <div class="welcome-text">
+                            <h3>✨ Intelligent Task Creation</h3>
+                            <p>I auto-detect and process both natural language and JSON</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-showcase">
+                        <div class="feature-card premium">
+                            <div class="feature-icon-wrapper">
+                                <i class="fas fa-comment-dots"></i>
+                            </div>
+                            <div class="feature-info">
+                                <strong>Natural Language</strong>
+                                <span>"Meeting Monday 10am high priority work"</span>
+                            </div>
+                        </div>
+                        <div class="feature-card premium">
+                            <div class="feature-icon-wrapper">
+                                <i class="fas fa-code"></i>
+                            </div>
+                            <div class="feature-info">
+                                <strong>JSON Format</strong>
+                                <span>Paste array for bulk task import</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="premium-cta">
+                        <button class="cta-btn primary" onclick="showJSONTemplate()">
+                            <i class="fas fa-file-code"></i>
+                            <span>View JSON Template</span>
+                        </button>
+                        <button class="cta-btn secondary" onclick="showJSONExample()">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>See Examples</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="ai-chat-input-container premium-input-container">
+            <div class="input-format-indicator" id="formatIndicator">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <span>Auto-detecting format...</span>
+            </div>
+            <div class="ai-chat-input-wrapper premium-wrapper">
+                <textarea 
+                    id="aiChatInput" 
+                    placeholder="Type naturally: 'Call dentist Monday 2pm' or paste JSON array: [{&quot;task&quot;:&quot;...&quot;}]" 
+                    rows="3"
+                    oninput="detectInputFormat()"
+                    onkeydown="handleChatKeyPress(event)"
+                ></textarea>
+                <button class="ai-send-button premium-send" onclick="sendChatMessage()">
+                    <i class="fas fa-magic"></i>
+                    <span>Create</span>
+                </button>
+            </div>
+            <div class="ai-quick-actions premium-actions">
+                <button class="ai-quick-btn" onclick="showJSONTemplate()">
+                    <i class="fas fa-file-code"></i> Template
+                </button>
+                <button class="ai-quick-btn" onclick="showJSONExample()">
+                    <i class="fas fa-lightbulb"></i> Examples
+                </button>
+                <button class="ai-quick-btn" onclick="clearChatInput()">
+                    <i class="fas fa-eraser"></i> Clear
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

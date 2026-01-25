@@ -716,6 +716,1114 @@ function showInboxView() {
     showNotification('INBOX: Showing all ' + allTasks.length + ' tasks', 'success');
 }
 
+// AI Task Creator Functions
+function toggleAICreator() {
+    var body = document.getElementById('aiCreatorBody');
+    var btn = document.getElementById('aiToggleBtn');
+    
+    if (body.style.display === 'none' || body.style.display === '') {
+        body.style.display = 'block';
+        btn.innerHTML = '<i class="fas fa-chevron-up"></i>';
+        body.style.animation = 'slideDown 0.3s ease-out';
+    } else {
+        body.style.display = 'none';
+        btn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+    }
+}
+
+function clearAIPrompt() {
+    document.getElementById('aiPromptInput').value = '';
+    document.getElementById('aiPreview').style.display = 'none';
+    showNotification('Prompt cleared', 'info');
+}
+
+function processAIPrompt() {
+    var prompt = document.getElementById('aiPromptInput').value.trim();
+    
+    if (!prompt) {
+        showNotification('Please enter a task description', 'error');
+        return;
+    }
+    
+    // Parse the prompt and extract tasks
+    var parsedTasks = parseAIPrompt(prompt);
+    
+    if (parsedTasks.length === 0) {
+        showNotification('Could not understand the prompt. Please try again with day information (e.g., "on Monday", "Tuesday")', 'error');
+        return;
+    }
+    
+    // Show preview
+    showTaskPreview(parsedTasks);
+}
+
+function parseAIPrompt(prompt) {
+    var tasks = [];
+    var promptLower = prompt.toLowerCase();
+    
+    // Define keyword patterns
+    var dayPatterns = {
+        'monday': ['monday', 'mon'],
+        'tuesday': ['tuesday', 'tue', 'tues'],
+        'wednesday': ['wednesday', 'wed'],
+        'thursday': ['thursday', 'thu', 'thur', 'thurs'],
+        'friday': ['friday', 'fri'],
+        'saturday': ['saturday', 'sat'],
+        'sunday': ['sunday', 'sun']
+    };
+    
+    var priorityPatterns = {
+        'high': ['high', 'urgent', 'important', 'critical', 'asap'],
+        'medium': ['medium', 'normal', 'moderate'],
+        'low': ['low', 'minor', 'sometime', 'later']
+    };
+    
+    var categoryPatterns = {
+        'work': ['work', 'office', 'meeting', 'project', 'business', 'client', 'team'],
+        'personal': ['personal', 'home', 'family', 'errands', 'shopping', 'buy'],
+        'health': ['health', 'gym', 'workout', 'exercise', 'fitness', 'doctor', 'medical'],
+        'study': ['study', 'learn', 'course', 'exam', 'homework', 'assignment', 'read', 'research']
+    };
+    
+    var periodPatterns = {
+        'early-morning': ['early morning', 'dawn', 'sunrise'],
+        'morning': ['morning', 'am'],
+        'afternoon': ['afternoon', 'noon', 'pm'],
+        'evening': ['evening', 'night']
+    };
+    
+    // Special day keywords
+    var today = new Date().getDay();
+    var dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    
+    if (promptLower.includes('today')) {
+        promptLower = promptLower.replace(/today/g, dayNames[today]);
+    }
+    if (promptLower.includes('tomorrow')) {
+        var tomorrow = (today + 1) % 7;
+        promptLower = promptLower.replace(/tomorrow/g, dayNames[tomorrow]);
+    }
+    if (promptLower.includes('weekend')) {
+        // Add task for both Saturday and Sunday
+        var weekendPrompt = promptLower.replace(/weekend/g, '');
+        var satTask = parseTaskDetails(weekendPrompt, 'saturday', priorityPatterns, categoryPatterns, periodPatterns);
+        var sunTask = parseTaskDetails(weekendPrompt, 'sunday', priorityPatterns, categoryPatterns, periodPatterns);
+        if (satTask.title) tasks.push(satTask);
+        if (sunTask.title) tasks.push(sunTask);
+        return tasks;
+    }
+    
+    // Split by common separators (and, also, comma, then, etc.)
+    var segments = promptLower.split(/(?:\s+and\s+|\s*,\s*|\s+also\s+|\s+then\s+)/);
+    
+    // If no separators, try to find multiple days in the same prompt
+    if (segments.length === 1) {
+        var foundDays = [];
+        for (var day in dayPatterns) {
+            for (var i = 0; i < dayPatterns[day].length; i++) {
+                var pattern = dayPatterns[day][i];
+                var regex = new RegExp('\\b' + pattern + '\\b', 'i');
+                if (regex.test(promptLower)) {
+                    foundDays.push(day);
+                    break;
+                }
+            }
+        }
+        
+        if (foundDays.length > 1) {
+            // Multiple days found in one sentence
+            for (var i = 0; i < foundDays.length; i++) {
+                var task = parseTaskDetails(promptLower, foundDays[i], priorityPatterns, categoryPatterns, periodPatterns);
+                if (task.title) {
+                    tasks.push(task);
+                }
+            }
+            return tasks;
+        }
+    }
+    
+    // Process each segment
+    for (var i = 0; i < segments.length; i++) {
+        var segment = segments[i].trim();
+        if (!segment) continue;
+        
+        // Find which day this task is for
+        var taskDay = null;
+        for (var day in dayPatterns) {
+            for (var j = 0; j < dayPatterns[day].length; j++) {
+                var pattern = dayPatterns[day][j];
+                var regex = new RegExp('\\b' + pattern + '\\b', 'i');
+                if (regex.test(segment)) {
+                    taskDay = day;
+                    break;
+                }
+            }
+            if (taskDay) break;
+        }
+        
+        if (!taskDay) {
+            // Try to use the previous segment's day or skip
+            continue;
+        }
+        
+        var task = parseTaskDetails(segment, taskDay, priorityPatterns, categoryPatterns, periodPatterns);
+        if (task.title) {
+            tasks.push(task);
+        }
+    }
+    
+    return tasks;
+}
+
+function parseTaskDetails(text, day, priorityPatterns, categoryPatterns, periodPatterns) {
+    var task = {
+        title: '',
+        day: day,
+        priority: 'low',
+        category: 'other',
+        period: 'morning'
+    };
+    
+    // Extract priority
+    for (var priority in priorityPatterns) {
+        for (var i = 0; i < priorityPatterns[priority].length; i++) {
+            var pattern = priorityPatterns[priority][i];
+            var regex = new RegExp('\\b' + pattern + '\\b', 'i');
+            if (regex.test(text)) {
+                task.priority = priority;
+                break;
+            }
+        }
+        if (task.priority !== 'low') break;
+    }
+    
+    // Extract category
+    for (var category in categoryPatterns) {
+        for (var i = 0; i < categoryPatterns[category].length; i++) {
+            var pattern = categoryPatterns[category][i];
+            var regex = new RegExp('\\b' + pattern + '\\b', 'i');
+            if (regex.test(text)) {
+                task.category = category;
+                break;
+            }
+        }
+        if (task.category !== 'other') break;
+    }
+    
+    // Extract time period
+    for (var period in periodPatterns) {
+        for (var i = 0; i < periodPatterns[period].length; i++) {
+            var pattern = periodPatterns[period][i];
+            var regex = new RegExp(pattern, 'i');
+            if (regex.test(text)) {
+                task.period = period;
+                break;
+            }
+        }
+        if (task.period !== 'morning') break;
+    }
+    
+    // Extract title - remove keywords and clean up
+    var title = text;
+    
+    // Remove day names
+    var dayWords = ['monday', 'mon', 'tuesday', 'tue', 'tues', 'wednesday', 'wed', 
+                    'thursday', 'thu', 'thur', 'friday', 'fri', 'saturday', 'sat', 
+                    'sunday', 'sun', 'today', 'tomorrow', 'weekend'];
+    for (var i = 0; i < dayWords.length; i++) {
+        var regex = new RegExp('\\b' + dayWords[i] + '\\b', 'gi');
+        title = title.replace(regex, '');
+    }
+    
+    // Remove priority keywords
+    var priorityWords = ['high', 'urgent', 'important', 'critical', 'asap', 'medium', 'normal', 
+                         'moderate', 'low', 'minor', 'sometime', 'later', 'priority'];
+    for (var i = 0; i < priorityWords.length; i++) {
+        var regex = new RegExp('\\b' + priorityWords[i] + '\\b', 'gi');
+        title = title.replace(regex, '');
+    }
+    
+    // Remove time period keywords
+    var timeWords = ['early morning', 'morning', 'afternoon', 'evening', 'night', 'am', 'pm', 'noon', 'dawn'];
+    for (var i = 0; i < timeWords.length; i++) {
+        var regex = new RegExp('\\b' + timeWords[i] + '\\b', 'gi');
+        title = title.replace(regex, '');
+    }
+    
+    // Remove common words
+    var commonWords = ['on', 'at', 'in', 'for', 'the', 'a', 'an', 'with', 'category'];
+    for (var i = 0; i < commonWords.length; i++) {
+        var regex = new RegExp('\\b' + commonWords[i] + '\\b', 'gi');
+        title = title.replace(regex, '');
+    }
+    
+    // Clean up extra spaces and capitalize
+    title = title.replace(/\s+/g, ' ').trim();
+    if (title) {
+        title = title.charAt(0).toUpperCase() + title.slice(1);
+    }
+    
+    task.title = title;
+    return task;
+}
+
+function showTaskPreview(parsedTasks) {
+    var previewDiv = document.getElementById('aiPreview');
+    var previewList = document.getElementById('aiPreviewList');
+    
+    previewList.innerHTML = '';
+    
+    for (var i = 0; i < parsedTasks.length; i++) {
+        var task = parsedTasks[i];
+        var previewItem = document.createElement('div');
+        previewItem.className = 'ai-preview-item';
+        
+        var dayNames = {
+            'monday': 'Monday', 'tuesday': 'Tuesday', 'wednesday': 'Wednesday',
+            'thursday': 'Thursday', 'friday': 'Friday', 'saturday': 'Saturday', 'sunday': 'Sunday'
+        };
+        
+        previewItem.innerHTML = `
+            <div class="preview-task-title">${task.title}</div>
+            <div class="preview-task-details">
+                <span class="preview-badge preview-day">${dayNames[task.day]}</span>
+                <span class="preview-badge preview-priority priority-${task.priority}">${task.priority.toUpperCase()}</span>
+                <span class="preview-badge preview-category">${task.category}</span>
+                <span class="preview-badge preview-period">${task.period.replace('-', ' ')}</span>
+            </div>
+        `;
+        
+        previewList.appendChild(previewItem);
+    }
+    
+    previewDiv.style.display = 'block';
+    
+    // Create confirm button if not exists
+    var existingBtn = document.getElementById('aiConfirmBtn');
+    if (existingBtn) {
+        existingBtn.remove();
+    }
+    
+    var confirmBtn = document.createElement('button');
+    confirmBtn.id = 'aiConfirmBtn';
+    confirmBtn.className = 'ai-confirm-btn';
+    confirmBtn.innerHTML = '<i class="fas fa-check"></i> Confirm & Add ' + parsedTasks.length + ' Task' + (parsedTasks.length > 1 ? 's' : '');
+    confirmBtn.onclick = function() {
+        createTasksFromAI(parsedTasks);
+    };
+    
+    previewDiv.appendChild(confirmBtn);
+}
+
+function createTasksFromAI(parsedTasks) {
+    var addedCount = 0;
+    
+    for (var i = 0; i < parsedTasks.length; i++) {
+        var taskData = parsedTasks[i];
+        
+        var newTask = {
+            id: Date.now() + i,
+            title: taskData.title,
+            completed: false,
+            priority: taskData.priority,
+            category: taskData.category,
+            period: taskData.period,
+            dueDate: '',
+            notes: 'Created by AI Task Creator',
+            createdAt: new Date().toISOString()
+        };
+        
+        tasks[taskData.day].push(newTask);
+        addedCount++;
+    }
+    
+    // Save and refresh
+    saveTasksToStorage();
+    renderAllTasks();
+    
+    // Clear the input and preview
+    document.getElementById('aiPromptInput').value = '';
+    document.getElementById('aiPreview').style.display = 'none';
+    
+    // Show success notification
+    showNotification('Successfully added ' + addedCount + ' task' + (addedCount > 1 ? 's' : '') + ' using AI!', 'success');
+    playSound('add');
+    
+    // Scroll to show the added tasks
+    setTimeout(function() {
+        if (parsedTasks.length > 0) {
+            var firstDay = parsedTasks[0].day;
+            var dayCard = document.querySelector('[data-day="' + firstDay + '"]');
+            if (dayCard) {
+                dayCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+    }, 300);
+}
+
+// AI Chat Interface Functions
+var chatHistory = [];
+var currentAIMode = 'single'; // 'single' or 'multi'
+
+function toggleAIChat() {
+    var chatWindow = document.getElementById('aiChatWindow');
+    var chatButton = document.getElementById('aiChatButton');
+    
+    if (chatWindow.classList.contains('active')) {
+        chatWindow.classList.remove('active');
+        chatButton.classList.remove('hidden');
+    } else {
+        chatWindow.classList.add('active');
+        chatButton.classList.add('hidden');
+        // Focus on input
+        setTimeout(function() {
+            document.getElementById('aiChatInput').focus();
+        }, 300);
+    }
+}
+
+// Legacy function - no longer needed in unified interface
+function switchAIMode(mode) {
+    // Unified interface doesn't need mode switching
+    // Kept for backwards compatibility
+    return;
+}
+
+function showJSONTemplate() {
+    var template = {
+        "tasks": [
+            {
+                "title": "Task name here",
+                "day": "monday|tuesday|wednesday|thursday|friday|saturday|sunday",
+                "priority": "high|medium|low (default: low)",
+                "category": "work|personal|health|study|other (default: other)",
+                "period": "early-morning|morning|afternoon|evening (default: morning)"
+            }
+        ]
+    };
+    
+    var templateJson = JSON.stringify(template, null, 2);
+    var templateId = 'template_' + Date.now();
+    
+    addChatMessage(
+        `<p><strong>\ud83d\udccb JSON Template Ready!</strong></p>
+        <p class="copy-instruction"><i class="fas fa-hand-pointer"></i> Click the button below to copy</p>
+        <div class="json-template-box">
+            <div class="json-header">
+                <span class="json-label"><i class="fas fa-code"></i> Template</span>
+                <button class="copy-json-btn-inline" onclick="copyTemplateToClipboard('${templateId}')">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+            </div>
+            <pre id="${templateId}"><code>${escapeHtml(templateJson)}</code></pre>
+        </div>
+        <div class="chatgpt-prompt-box">
+            <p class="prompt-label"><i class="fas fa-comment-dots"></i> <strong>Use this prompt in ChatGPT:</strong></p>
+            <div class="prompt-content" id="prompt_${templateId}">Fill this JSON with my tasks:
+
+${templateJson}
+
+My tasks:
+- Monday morning: Team meeting (high priority, work)
+- Tuesday evening: Gym workout (medium, health)  
+- Wednesday afternoon: Study session (high, study)</div>
+            <button class="copy-prompt-btn" onclick="copyPromptToClipboard('prompt_${templateId}')">
+                <i class="fas fa-copy"></i> Copy Full Prompt for ChatGPT
+            </button>
+        </div>
+        <p class="ai-message-hint"><i class="fas fa-arrow-right"></i> After ChatGPT responds, copy its JSON and paste here!</p>`,
+        'bot'
+    );
+}
+
+function showJSONExample() {
+    var example = {
+        "tasks": [
+            {
+                "title": "Team standup meeting",
+                "day": "monday",
+                "priority": "high",
+                "category": "work",
+                "period": "morning"
+            },
+            {
+                "title": "Gym workout session",
+                "day": "tuesday",
+                "priority": "medium",
+                "category": "health",
+                "period": "evening"
+            },
+            {
+                "title": "Study JavaScript",
+                "day": "wednesday",
+                "priority": "high",
+                "category": "study",
+                "period": "afternoon"
+            },
+            {
+                "title": "Grocery shopping",
+                "day": "saturday",
+                "priority": "low",
+                "category": "personal",
+                "period": "morning"
+            }
+        ]
+    };
+    
+    var exampleJson = JSON.stringify(example, null, 2);
+    var exampleId = 'example_' + Date.now();
+    
+    addChatMessage(
+        `<p><strong>\u2728 Example JSON (4 tasks):</strong></p>
+        <div class="json-template-box example-box">
+            <div class="json-header">
+                <span class="json-label"><i class="fas fa-star"></i> Example</span>
+                <button class="copy-json-btn-inline" onclick="copyTemplateToClipboard('${exampleId}')">
+                    <i class="fas fa-copy"></i> Copy Example
+                </button>
+            </div>
+            <pre id="${exampleId}"><code>${escapeHtml(exampleJson)}</code></pre>
+        </div>
+        <div class="info-box">
+            <p><i class="fas fa-info-circle"></i> <strong>What this creates:</strong></p>
+            <ul class="task-preview-list">
+                <li><span class="preview-day">Monday</span> Team standup meeting <span class="preview-priority high">\ud83d\udd34 HIGH</span></li>
+                <li><span class="preview-day">Tuesday</span> Gym workout session <span class="preview-priority medium">\ud83d\udfe1 MEDIUM</span></li>
+                <li><span class="preview-day">Wednesday</span> Study JavaScript <span class="preview-priority high">\ud83d\udd34 HIGH</span></li>
+                <li><span class="preview-day">Saturday</span> Grocery shopping <span class="preview-priority low">\ud83d\udfe2 LOW</span></li>
+            </ul>
+        </div>
+        <p class="ai-message-hint"><i class="fas fa-magic"></i> You can copy and modify this example!</p>`,
+        'bot'
+    );
+}
+
+function copyToClipboard(text, label) {
+    // Unescape the text
+    var textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    var unescapedText = textarea.value;
+    
+    navigator.clipboard.writeText(unescapedText).then(function() {
+        showNotification(label + ' copied to clipboard! \ud83d\udccb', 'success');
+    }).catch(function() {
+        // Fallback
+        var textArea = document.createElement('textarea');
+        textArea.value = unescapedText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showNotification(label + ' copied to clipboard! \ud83d\udccb', 'success');
+    });
+}
+
+function copyTemplateToClipboard(elementId) {
+    var element = document.getElementById(elementId);
+    if (!element) return;
+    
+    var text = element.textContent;
+    
+    navigator.clipboard.writeText(text).then(function() {
+        // Visual feedback
+        var button = event.target.closest('.copy-json-btn-inline');
+        if (button) {
+            var originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            button.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+            
+            setTimeout(function() {
+                button.innerHTML = originalHTML;
+                button.style.background = '';
+            }, 2000);
+        }
+        showNotification('\u2705 Copied to clipboard!', 'success');
+    }).catch(function() {
+        // Fallback
+        var textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showNotification('\u2705 Copied to clipboard!', 'success');
+    });
+}
+
+function copyPromptToClipboard(elementId) {
+    var element = document.getElementById(elementId);
+    if (!element) return;
+    
+    var text = element.textContent.trim();
+    
+    navigator.clipboard.writeText(text).then(function() {
+        var button = event.target.closest('.copy-prompt-btn');
+        if (button) {
+            var originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check-circle"></i> Copied! Now paste in ChatGPT';
+            button.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+            
+            setTimeout(function() {
+                button.innerHTML = originalHTML;
+                button.style.background = '';
+            }, 3000);
+        }
+        showNotification('\u2705 Prompt copied! Paste it in ChatGPT', 'success');
+    }).catch(function() {
+        showNotification('Please try again', 'error');
+    });
+}
+
+function insertExample(text) {
+    var input = document.getElementById('aiChatInput');
+    input.value = text;
+    input.focus();
+    input.style.height = 'auto';
+    input.style.height = input.scrollHeight + 'px';
+    
+    // Show a hint
+    showNotification('\u2728 Example inserted! Click send to add this task', 'info');
+}
+
+function showQuickGuide() {
+    addChatMessage(
+        `<p><strong>\ud83d\udcda Quick Guide: Multi-Task JSON</strong></p>
+        <div class="guide-box">
+            <div class="guide-section">
+                <h4><i class="fas fa-rocket"></i> How It Works</h4>
+                <ol class="guide-steps">
+                    <li>Get the JSON template from this chat</li>
+                    <li>Copy it to ChatGPT</li>
+                    <li>Tell ChatGPT your tasks</li>
+                    <li>ChatGPT fills the template</li>
+                    <li>Copy & paste result here</li>
+                    <li>All tasks added instantly! \u2728</li>
+                </ol>
+            </div>
+            <div class="guide-section">
+                <h4><i class="fas fa-tags"></i> Valid Values</h4>
+                <div class="values-grid">
+                    <div class="value-item">
+                        <strong>Days:</strong> monday, tuesday, wednesday, thursday, friday, saturday, sunday
+                    </div>
+                    <div class="value-item">
+                        <strong>Priority:</strong> <span class="priority-tag high">high</span> <span class="priority-tag medium">medium</span> <span class="priority-tag low">low (default)</span>
+                    </div>
+                    <div class="value-item">
+                        <strong>Category:</strong> work, personal, health, study, other
+                    </div>
+                    <div class="value-item">
+                        <strong>Period:</strong> early-morning, morning (default), afternoon, evening
+                    </div>
+                </div>
+            </div>
+            <div class="guide-section">
+                <h4><i class="fas fa-comment-dots"></i> ChatGPT Prompt Example</h4>
+                <div class="prompt-example">
+                    "Fill this JSON with tasks:<br>
+                    - Monday 9am: Team meeting (high priority, work)<br>
+                    - Tuesday evening: Gym (health)<br>
+                    - Wednesday: Study React (study, important)"
+                </div>
+            </div>
+        </div>
+        <p class="ai-message-hint"><i class="fas fa-question-circle"></i> Need help? Just ask in single task mode!</p>`,
+        'bot'
+    );
+}
+
+function validateJSON() {
+    var input = document.getElementById('aiChatInput');
+    var jsonText = input.value.trim();
+    
+    if (!jsonText) {
+        showNotification('Please paste JSON first', 'error');
+        return;
+    }
+    
+    try {
+        var data = JSON.parse(jsonText);
+        if (!data.tasks || !Array.isArray(data.tasks)) {
+            throw new Error('Invalid format: must have "tasks" array');
+        }
+        
+        showNotification('\u2705 Valid JSON! ' + data.tasks.length + ' tasks found', 'success');
+        
+        // Show preview
+        addChatMessage(
+            `<p>\u2705 <strong>JSON is valid!</strong></p>
+            <p>Found ${data.tasks.length} task${data.tasks.length > 1 ? 's' : ''}. Click send to add them!</p>`,
+            'bot'
+        );
+    } catch (e) {
+        showNotification('\u274c Invalid JSON: ' + e.message, 'error');
+        addChatMessage(
+            `<p>\u274c <strong>Invalid JSON format</strong></p>
+            <p class="ai-message-hint">${escapeHtml(e.message)}</p>
+            <p>Make sure you copied the complete JSON from ChatGPT.</p>`,
+            'bot'
+        );
+    }
+}
+
+function clearChatInput() {
+    document.getElementById('aiChatInput').value = '';
+    document.getElementById('aiChatInput').style.height = 'auto';
+}
+
+function handleChatKeyPress(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendChatMessage();
+    }
+}
+
+function insertQuickText(text) {
+    var input = document.getElementById('aiChatInput');
+    var currentText = input.value.trim();
+    
+    if (currentText) {
+        input.value = currentText + ' ' + text;
+    } else {
+        input.value = text + ' ';
+    }
+    input.focus();
+}
+
+function insertExample(text) {
+    var input = document.getElementById('aiChatInput');
+    input.value = text;
+    input.focus();
+    input.style.height = 'auto';
+    input.style.height = input.scrollHeight + 'px';
+    
+    // Show a hint
+    showNotification('✨ Example inserted! Click send to add this task', 'info');
+}
+
+function sendChatMessage() {
+    var input = document.getElementById('aiChatInput');
+    var message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Intelligent auto-detection: JSON or natural language
+    var isJSON = detectJSONFormat(message);
+    
+    if (isJSON) {
+        // Process as JSON array
+        processJSONTasks(message);
+    } else {
+        // Process as natural language
+        // Add user message to chat
+        addChatMessage(message, 'user');
+        
+        // Clear input
+        input.value = '';
+        input.style.height = 'auto';
+        updateFormatIndicator('');
+        
+        // Process the message
+        setTimeout(function() {
+            processChatMessage(message);
+        }, 500);
+    }
+}
+
+// Intelligent JSON detection
+function detectJSONFormat(text) {
+    if (!text || typeof text !== 'string') return false;
+    
+    var trimmed = text.trim();
+    
+    // Check if it starts with [ or { (JSON array or object)
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+        try {
+            var parsed = JSON.parse(trimmed);
+            // Check if it's an array or has tasks property
+            if (Array.isArray(parsed)) {
+                return true;
+            }
+            if (parsed.tasks && Array.isArray(parsed.tasks)) {
+                return true;
+            }
+        } catch (e) {
+            return false;
+        }
+    }
+    return false;
+}
+
+// Real-time format detection for UI feedback
+function detectInputFormat() {
+    var input = document.getElementById('aiChatInput');
+    var text = input.value.trim();
+    
+    if (!text) {
+        updateFormatIndicator('');
+        return;
+    }
+    
+    if (detectJSONFormat(text)) {
+        updateFormatIndicator('json');
+    } else {
+        updateFormatIndicator('natural');
+    }
+}
+
+// Update the format indicator
+function updateFormatIndicator(format) {
+    var indicator = document.getElementById('formatIndicator');
+    if (!indicator) return;
+    
+    if (!format) {
+        indicator.style.display = 'none';
+        return;
+    }
+    
+    indicator.style.display = 'flex';
+    
+    if (format === 'json') {
+        indicator.innerHTML = '<i class=\"fas fa-code\"></i> <span>JSON Format Detected</span>';
+        indicator.className = 'input-format-indicator json-format';
+    } else {
+        indicator.innerHTML = '<i class=\"fas fa-comment-dots\"></i> <span>Natural Language</span>';
+        indicator.className = 'input-format-indicator natural-format';
+    }
+}
+
+function addChatMessage(message, type) {
+    var chatMessages = document.getElementById('aiChatMessages');
+    var messageDiv = document.createElement('div');
+    messageDiv.className = 'ai-message ai-' + type + '-message';
+    
+    if (type === 'user') {
+        messageDiv.innerHTML = `
+            <div class="ai-message-content user-message-content">
+                <p>${escapeHtml(message)}</p>
+            </div>
+            <div class="ai-message-avatar user-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+        `;
+    } else {
+        messageDiv.innerHTML = `
+            <div class="ai-message-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="ai-message-content">
+                ${message}
+            </div>
+        `;
+    }
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Add animation
+    setTimeout(function() {
+        messageDiv.classList.add('fade-in');
+    }, 10);
+}
+
+function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function processChatMessage(message) {
+    // Show typing indicator
+    showTypingIndicator();
+    
+    setTimeout(function() {
+        hideTypingIndicator();
+        
+        // Parse the message
+        var parsedTasks = parseAIPrompt(message);
+        
+        if (parsedTasks.length === 0) {
+            addChatMessage(
+                `<p>🤔 I couldn't find a day in your message. Could you specify when you want to do this?</p>
+                <p class="ai-message-hint">Try: "${escapeHtml(message)} on Monday" or "${escapeHtml(message)} tomorrow"</p>`,
+                'bot'
+            );
+            return;
+        }
+        
+        // Create tasks
+        var addedCount = 0;
+        for (var i = 0; i < parsedTasks.length; i++) {
+            var taskData = parsedTasks[i];
+            
+            var newTask = {
+                id: Date.now() + i,
+                title: taskData.title,
+                completed: false,
+                priority: taskData.priority,
+                category: taskData.category,
+                period: taskData.period,
+                dueDate: '',
+                notes: 'Created via AI Chat',
+                createdAt: new Date().toISOString()
+            };
+            
+            tasks[taskData.day].push(newTask);
+            addedCount++;
+        }
+        
+        // Save and refresh
+        saveTasksToStorage();
+        renderAllTasks();
+        playSound('add');
+        
+        // Build response message
+        var responseHtml = '<p>✅ Great! I\'ve added ' + addedCount + ' task' + (addedCount > 1 ? 's' : '') + ' for you:</p>';
+        responseHtml += '<div class="ai-task-summary">';
+        
+        for (var i = 0; i < parsedTasks.length; i++) {
+            var task = parsedTasks[i];
+            var dayNames = {
+                'monday': 'Monday', 'tuesday': 'Tuesday', 'wednesday': 'Wednesday',
+                'thursday': 'Thursday', 'friday': 'Friday', 'saturday': 'Saturday', 'sunday': 'Sunday'
+            };
+            
+            var priorityEmojis = {
+                'high': '🔴',
+                'medium': '🟡',
+                'low': '🟢'
+            };
+            
+            responseHtml += `
+                <div class="ai-task-item">
+                    <strong>${escapeHtml(task.title)}</strong><br>
+                    <small>
+                        📅 ${dayNames[task.day]} | 
+                        ${priorityEmojis[task.priority]} ${task.priority.toUpperCase()} | 
+                        🏷️ ${task.category}
+                    </small>
+                </div>
+            `;
+        }
+        
+        responseHtml += '</div>';
+        responseHtml += '<p class="ai-message-hint">Need anything else?</p>';
+        
+        addChatMessage(responseHtml, 'bot');
+        
+        // Show notification
+        showNotification('✨ AI added ' + addedCount + ' task' + (addedCount > 1 ? 's' : '') + '!', 'success');
+    }, 1000);
+}
+
+function showTypingIndicator() {
+    var chatMessages = document.getElementById('aiChatMessages');
+    var typingDiv = document.createElement('div');
+    typingDiv.id = 'typingIndicator';
+    typingDiv.className = 'ai-message ai-bot-message typing-indicator';
+    typingDiv.innerHTML = `
+        <div class="ai-message-avatar">
+            <i class="fas fa-robot"></i>
+        </div>
+        <div class="ai-message-content">
+            <div class="typing-dots">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    `;
+    chatMessages.appendChild(typingDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function hideTypingIndicator() {
+    var typingIndicator = document.getElementById('typingIndicator');
+    if (typingIndicator) {
+        typingIndicator.remove();
+    }
+}
+
+function processJSONTasks(jsonText) {
+    var input = document.getElementById('aiChatInput');
+    
+    // Show typing indicator
+    showTypingIndicator();
+    
+    setTimeout(function() {
+        hideTypingIndicator();
+        
+        try {
+            // Parse JSON - intelligently handle both formats
+            var data = JSON.parse(jsonText);
+            var tasksArray;
+            
+            // Smart detection: Array directly or object with tasks property
+            if (Array.isArray(data)) {
+                tasksArray = data;
+            } else if (data.tasks && Array.isArray(data.tasks)) {
+                tasksArray = data.tasks;
+            } else {
+                throw new Error('Invalid format. Expected array or object with "tasks" property');
+            }
+            
+            if (tasksArray.length === 0) {
+                throw new Error('No tasks found in JSON');
+            }
+            
+            // Validate and process each task
+            var validTasks = [];
+            var errors = [];
+            
+            for (var i = 0; i < tasksArray.length; i++) {
+                var task = tasksArray[i];
+                
+                // Validate required fields
+                if (!task.title && !task.task) {
+                    errors.push('Task ' + (i + 1) + ': Missing title/task');
+                    continue;
+                }
+                
+                if (!task.day) {
+                    errors.push('Task ' + (i + 1) + ': Missing day');
+                    continue;
+                }
+                
+                // Validate day
+                var validDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+                if (validDays.indexOf(task.day.toLowerCase()) === -1) {
+                    errors.push('Task ' + (i + 1) + ': Invalid day "' + task.day + '"');
+                    continue;
+                }
+                
+                // Set defaults - support both "title" and "task" field names
+                var taskData = {
+                    title: task.title || task.task,
+                    day: task.day.toLowerCase(),
+                    priority: task.priority ? task.priority.toLowerCase() : 'low',
+                    category: task.category ? task.category.toLowerCase() : 'other',
+                    period: task.period ? task.period.toLowerCase() : 'morning'
+                };
+                
+                // Validate priority
+                var validPriorities = ['high', 'medium', 'low'];
+                if (validPriorities.indexOf(taskData.priority) === -1) {
+                    taskData.priority = 'low';
+                }
+                
+                // Validate category
+                var validCategories = ['work', 'personal', 'health', 'study', 'other'];
+                if (validCategories.indexOf(taskData.category) === -1) {
+                    taskData.category = 'other';
+                }
+                
+                // Validate period
+                var validPeriods = ['early-morning', 'morning', 'afternoon', 'evening'];
+                if (validPeriods.indexOf(taskData.period) === -1) {
+                    taskData.period = 'morning';
+                }
+                
+                validTasks.push(taskData);
+            }
+            
+            if (validTasks.length === 0) {
+                throw new Error('No valid tasks found. ' + (errors.length > 0 ? errors[0] : ''));
+            }
+            
+            // Create tasks
+            var addedCount = 0;
+            for (var i = 0; i < validTasks.length; i++) {
+                var taskData = validTasks[i];
+                
+                var newTask = {
+                    id: Date.now() + i,
+                    title: taskData.title,
+                    completed: false,
+                    priority: taskData.priority,
+                    category: taskData.category,
+                    period: taskData.period,
+                    dueDate: '',
+                    notes: 'Created via AI JSON import',
+                    createdAt: new Date().toISOString()
+                };
+                
+                tasks[taskData.day].push(newTask);
+                addedCount++;
+            }
+            
+            // Save and refresh
+            saveTasksToStorage();
+            renderAllTasks();
+            playSound('add');
+            
+            // Clear input
+            input.value = '';
+            input.style.height = 'auto';
+            
+            // Build response
+            var responseHtml = '<p>\u2705 <strong>Success!</strong> Added ' + addedCount + ' task' + (addedCount > 1 ? 's' : '') + '!</p>';
+            
+            if (errors.length > 0) {
+                responseHtml += '<p class=\"ai-message-hint\">\u26a0\ufe0f Skipped ' + errors.length + ' invalid task' + (errors.length > 1 ? 's' : '') + '</p>';
+            }
+            
+            responseHtml += '<div class=\"ai-task-summary\">';
+            
+            var dayNames = {
+                'monday': 'Monday', 'tuesday': 'Tuesday', 'wednesday': 'Wednesday',
+                'thursday': 'Thursday', 'friday': 'Friday', 'saturday': 'Saturday', 'sunday': 'Sunday'
+            };
+            
+            var priorityEmojis = {
+                'high': '\ud83d\udd34',
+                'medium': '\ud83d\udfe1',
+                'low': '\ud83d\udfe2'
+            };
+            
+            for (var i = 0; i < Math.min(validTasks.length, 10); i++) {
+                var task = validTasks[i];
+                responseHtml += `
+                    <div class=\"ai-task-item\">
+                        <strong>${escapeHtml(task.title)}</strong><br>
+                        <small>
+                            \ud83d\udcc5 ${dayNames[task.day]} | 
+                            ${priorityEmojis[task.priority]} ${task.priority.toUpperCase()} | 
+                            \ud83c\udff7\ufe0f ${task.category}
+                        </small>
+                    </div>
+                `;
+            }
+            
+            if (validTasks.length > 10) {
+                responseHtml += '<p class=\"ai-message-hint\">...and ' + (validTasks.length - 10) + ' more tasks!</p>';
+            }
+            
+            responseHtml += '</div>';
+            
+            addChatMessage(responseHtml, 'bot');
+            showNotification('\u2728 Added ' + addedCount + ' tasks from JSON!', 'success');
+            
+        } catch (e) {
+            addChatMessage(
+                `<p>\u274c <strong>Error parsing JSON</strong></p>
+                <p class=\"ai-message-hint\">${escapeHtml(e.message)}</p>
+                <p>Please check your JSON format. Click "Get JSON Template" for help.</p>`,
+                'bot'
+            );
+            showNotification('\u274c JSON Error: ' + e.message, 'error');
+        }
+    }, 800);
+}
+
+// Auto-resize chat input
+window.addEventListener('load', function() {
+    var chatInput = document.getElementById('aiChatInput');
+    if (chatInput) {
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+    }
+});
+
 // Drag and Drop functionality
 var draggedTask = null;
 var draggedElement = null;
