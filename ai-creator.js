@@ -56,7 +56,8 @@ function copyTemplate() {
   "day": "monday",
   "priority": "low",
   "category": "work",
-  "period": "morning"
+  "period": "morning",
+  "subtasks": ["Subtask 1", "Subtask 2"]
 }]`;
     
     navigator.clipboard.writeText(template).then(function() {
@@ -147,7 +148,8 @@ function createTasks() {
                 day: task.day.toLowerCase(),
                 priority: task.priority ? task.priority.toLowerCase() : 'low',
                 category: task.category ? task.category.toLowerCase() : 'other',
-                period: task.period ? task.period.toLowerCase() : 'morning'
+                period: task.period ? task.period.toLowerCase() : 'morning',
+                subtasks: task.subtasks || []
             };
             
             // Validate and default invalid values
@@ -184,6 +186,13 @@ function createTasks() {
                 period: taskData.period,
                 dueDate: '',
                 notes: '',
+                subtasks: taskData.subtasks.map(function(subtaskText, idx) {
+                    return {
+                        id: Date.now() + i + idx + 1,
+                        text: typeof subtaskText === 'string' ? subtaskText : subtaskText.text || '',
+                        completed: typeof subtaskText === 'object' ? (subtaskText.completed || false) : false
+                    };
+                }),
                 createdAt: new Date().toISOString()
             };
             
