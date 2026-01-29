@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Agent - Weekly Todo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="agent.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="ai-header">
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="header-title">
+                <i class="fas fa-robot"></i>
+                <h1>Weekly Agent</h1>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </button>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="main-grid">
+                <!-- Main Input Section (Left - Primary) -->
+                <section class="input-section-main neumorphic-card">
+                    <h2><i class="fas fa-code"></i> Create Your Tasks</h2>
+                    <div class="input-box">
+                        <textarea id="jsonInput" placeholder='Paste your JSON here or start typing...' rows="12"></textarea>
+                        <div class="input-actions">
+                            <button class="action-btn create-btn neumorphic-btn-primary" onclick="createTasks()">
+                                <span class="btn-shine"></span>
+                                <i class="fas fa-magic"></i>
+                                <span>Create Tasks</span>
+                            </button>
+                            <button class="action-btn clear-btn neumorphic-btn" onclick="clearInput()">
+                                <i class="fas fa-eraser"></i>
+                                <span>Clear</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Info & Commands Below Input -->
+                    <div class="below-input-sections">
+                        <!-- Quick Info - Collapsible -->
+                        <details class="collapsible-section neumorphic-card-inset" open>
+                            <summary class="section-toggle">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Quick Info</span>
+                                <i class="fas fa-chevron-down toggle-icon"></i>
+                            </summary>
+                            <div class="info-content-grid">
+                                <div class="info-chip"><strong>Days:</strong> monday - sunday</div>
+                                <div class="info-chip"><strong>Priority:</strong> high, medium, low</div>
+                                <div class="info-chip"><strong>Category:</strong> work, personal, health, study, other</div>
+                                <div class="info-chip"><strong>Period:</strong> early-morning, morning, afternoon, evening</div>
+                                <div class="info-chip"><strong>Subtasks:</strong> Array of strings (optional)</div>
+                            </div>
+                        </details>
+
+                        <!-- Quick Commands - Collapsible -->
+                        <details class="collapsible-section neumorphic-card-inset">
+                            <summary class="section-toggle">
+                                <i class="fas fa-terminal"></i>
+                                <span>Quick Commands</span>
+                                <i class="fas fa-chevron-down toggle-icon"></i>
+                            </summary>
+                            <div class="commands-simple">
+                                <!-- Delete Section -->
+                                <div class="cmd-section">
+                                    <div class="cmd-header"><i class="fas fa-trash-alt"></i> Delete Tasks</div>
+                                    <div class="cmd-buttons">
+                                        <button class="cmd-btn cmd-danger" onclick="deleteAllTasks()">
+                                            <i class="fas fa-bomb"></i>
+                                            <span>Clear All</span>
+                                        </button>
+                                        <div class="cmd-day-btns">
+                                            <button class="cmd-btn cmd-day" onclick="quickDeleteDay('monday')">Mon</button>
+                                            <button class="cmd-btn cmd-day" onclick="quickDeleteDay('tuesday')">Tue</button>
+                                            <button class="cmd-btn cmd-day" onclick="quickDeleteDay('wednesday')">Wed</button>
+                                            <button class="cmd-btn cmd-day" onclick="quickDeleteDay('thursday')">Thu</button>
+                                            <button class="cmd-btn cmd-day" onclick="quickDeleteDay('friday')">Fri</button>
+                                            <button class="cmd-btn cmd-day" onclick="quickDeleteDay('saturday')">Sat</button>
+                                            <button class="cmd-btn cmd-day" onclick="quickDeleteDay('sunday')">Sun</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Duplicate Section -->
+                                <div class="cmd-section">
+                                    <div class="cmd-header"><i class="fas fa-copy"></i> Duplicate Tasks</div>
+                                    <div class="cmd-buttons">
+                                        <div class="cmd-copy-row">
+                                            <select id="duplicateFromDay" class="cmd-select">
+                                                <option value="">From</option>
+                                                <option value="monday">Monday</option>
+                                                <option value="tuesday">Tuesday</option>
+                                                <option value="wednesday">Wednesday</option>
+                                                <option value="thursday">Thursday</option>
+                                                <option value="friday">Friday</option>
+                                                <option value="saturday">Saturday</option>
+                                                <option value="sunday">Sunday</option>
+                                            </select>
+                                            <i class="fas fa-arrow-right cmd-arrow"></i>
+                                            <select id="duplicateToDay" class="cmd-select">
+                                                <option value="">To</option>
+                                                <option value="monday">Monday</option>
+                                                <option value="tuesday">Tuesday</option>
+                                                <option value="wednesday">Wednesday</option>
+                                                <option value="thursday">Thursday</option>
+                                                <option value="friday">Friday</option>
+                                                <option value="saturday">Saturday</option>
+                                                <option value="sunday">Sunday</option>
+                                            </select>
+                                            <button class="cmd-btn cmd-primary" onclick="duplicateTasks()">
+                                                <i class="fas fa-clone"></i> Copy
+                                            </button>
+                                        </div>
+                                        <button class="cmd-btn cmd-secondary" onclick="duplicateAllToNextWeek()">
+                                            <i class="fas fa-sync-alt"></i> Reset Week (Keep Tasks, Clear Progress)
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                </section>
+
+                <!-- Sidebar (Right - Template & Assistants) -->
+                <aside class="sidebar">
+                    <!-- External AI Assistants Quick Access -->
+                    <section class="ai-assistants neumorphic-card">
+                        <h3><i class="fas fa-robot"></i> External Assistants</h3>
+                        <div class="ai-buttons">
+                            <a href="https://chat.openai.com" target="_blank" class="ai-assistant-btn chatgpt-btn">
+                                <div class="btn-icon">
+                                    <i class="fas fa-comments"></i>
+                                </div>
+                                <div class="btn-content">
+                                    <span class="btn-title">ChatGPT</span>
+                                    <span class="btn-subtitle">Open AI Chat</span>
+                                </div>
+                                <i class="fas fa-external-link-alt btn-external"></i>
+                            </a>
+                            <a href="https://gemini.google.com" target="_blank" class="ai-assistant-btn gemini-btn">
+                                <div class="btn-icon">
+                                    <i class="fas fa-stars"></i>
+                                </div>
+                                <div class="btn-content">
+                                    <span class="btn-title">Gemini</span>
+                                    <span class="btn-subtitle">Google AI</span>
+                                </div>
+                                <i class="fas fa-external-link-alt btn-external"></i>
+                            </a>
+                        </div>
+                    </section>
+
+                    <!-- Template Section -->
+                    <section class="template-section-compact neumorphic-card">
+                        <h3><i class="fas fa-file-code"></i> Template</h3>
+                        <div class="template-box">
+                            <pre id="jsonTemplate"><code>[{
+  "task": "Task name",
+  "day": "monday",
+  "priority": "low",
+  "category": "work",
+  "period": "morning",
+  "subtasks": ["Subtask 1"]
+}]</code></pre>
+                            <button class="copy-btn-compact neumorphic-btn" onclick="copyTemplate()">
+                                <i class="fas fa-copy"></i>
+                                <span>Copy Template</span>
+                            </button>
+                        </div>
+                    </section>
+                </aside>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modern Toast Notification -->
+    <div id="notification" class="toast-notification">
+        <div class="toast-icon"></div>
+        <div class="toast-content">
+            <div class="toast-title"></div>
+            <div class="toast-message"></div>
+        </div>
+        <button class="toast-close" onclick="hideNotification()">
+            <i class="fas fa-times"></i>
+        </button>
+        <button class="toast-undo" onclick="undoDelete()">
+            <i class="fas fa-undo"></i> Undo
+        </button>
+        <div class="toast-progress"></div>
+    </div>
+
+    <!-- Delete Count Modal -->
+    <div id="deleteCountModal" class="confirm-modal">
+        <div class="confirm-box delete-count-box">
+            <div class="confirm-icon delete-icon"></div>
+            <h3 class="confirm-title">Delete from <span id="deleteModalDay">Monday</span></h3>
+            <p class="confirm-message">How many tasks do you want to delete?</p>
+            <div class="delete-count-info">
+                <span id="availableTaskCount">5</span> tasks available
+            </div>
+            <div class="delete-count-selector">
+                <button class="count-btn" onclick="adjustDeleteCount(-1)"><i class="fas fa-minus"></i></button>
+                <input type="number" id="deleteCountInput" value="1" min="1" class="count-input">
+                <button class="count-btn" onclick="adjustDeleteCount(1)"><i class="fas fa-plus"></i></button>
+                <button class="count-btn count-all" onclick="setDeleteCountAll()">All</button>
+            </div>
+            <div class="confirm-buttons">
+                <button class="confirm-btn confirm-cancel" onclick="closeDeleteCountModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="confirm-btn confirm-yes" onclick="confirmDeleteCount()">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="confirm-modal">
+        <div class="confirm-box">
+            <div class="confirm-icon"></div>
+            <h3 class="confirm-title"></h3>
+            <p class="confirm-message"></p>
+            <div class="confirm-buttons">
+                <button class="confirm-btn confirm-cancel" onclick="closeConfirmModal(false)">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="confirm-btn confirm-yes" onclick="closeConfirmModal(true)">
+                    <i class="fas fa-check"></i> Yes, do it
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="agent.js"></script>
+</body>
+</html>

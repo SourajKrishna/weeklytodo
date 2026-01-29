@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patch Notes - Weekly Todo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .patchnotes-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .patchnotes-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--bg-primary);
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .back-btn {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .header-info h1 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .header-info p {
+            color: var(--text-secondary);
+            margin: 0.25rem 0 0;
+            font-size: 0.9rem;
+        }
+
+        .version-card {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .version-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .version-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            background: var(--gradient-primary);
+            color: white;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .version-date {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .changes-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .changes-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .changes-list li i {
+            margin-top: 0.2rem;
+            font-size: 0.8rem;
+        }
+
+        .change-new { color: #10b981; }
+        .change-improved { color: #3b82f6; }
+        .change-fixed { color: #f59e0b; }
+        .change-removed { color: #ef4444; }
+
+        .change-type {
+            font-size: 0.75rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .type-new { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .type-improved { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .type-fixed { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+
+        .footer-simple {
+            margin-top: 3rem;
+            padding: 1.5rem 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .footer-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .footer-nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .footer-nav a:hover {
+            color: var(--accent-color);
+        }
+
+        .footer-nav .separator {
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="background-gradient"></div>
+    
+    <div class="patchnotes-container">
+        <header class="patchnotes-header">
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="header-info">
+                <h1><i class="fas fa-scroll"></i> Patch Notes</h1>
+                <p>What's new in Weekly Todo</p>
+            </div>
+        </header>
+
+        <!-- Version 2.0.0 -->
+        <article class="version-card">
+            <div class="version-header">
+                <span class="version-tag"><i class="fas fa-star"></i> v2.0.0</span>
+                <span class="version-date">January 29, 2026</span>
+            </div>
+            <ul class="changes-list">
+                <li>
+                    <i class="fas fa-plus-circle change-new"></i>
+                    <div>
+                        <span class="change-type type-new">New</span>
+                        <strong>Weekly Agent</strong> - AI Task Creator renamed to Weekly Agent with enhanced features
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-plus-circle change-new"></i>
+                    <div>
+                        <span class="change-type type-new">New</span>
+                        <strong>Quick Commands</strong> - Delete all tasks, delete by day, delete by count functionality
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-plus-circle change-new"></i>
+                    <div>
+                        <span class="change-type type-new">New</span>
+                        <strong>Task Duplication</strong> - Copy tasks between days or reset all for a new week
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-plus-circle change-new"></i>
+                    <div>
+                        <span class="change-type type-new">New</span>
+                        <strong>Patch Notes Page</strong> - Track all updates and changes to Weekly Todo
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-sync-alt change-improved"></i>
+                    <div>
+                        <span class="change-type type-improved">Improved</span>
+                        <strong>Footer Design</strong> - Simplified to clean text-only footer for better UX
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-sync-alt change-improved"></i>
+                    <div>
+                        <span class="change-type type-improved">Improved</span>
+                        <strong>Agent Interface</strong> - Cleaner sidebar with quick commands section
+                    </div>
+                </li>
+            </ul>
+        </article>
+
+        <!-- Version 1.0.0 -->
+        <article class="version-card">
+            <div class="version-header">
+                <span class="version-tag"><i class="fas fa-rocket"></i> v1.0.0</span>
+                <span class="version-date">Initial Release</span>
+            </div>
+            <ul class="changes-list">
+                <li>
+                    <i class="fas fa-plus-circle change-new"></i>
+                    <div>
+                        <span class="change-type type-new">New</span>
+                        <strong>Weekly Task Management</strong> - Organize tasks by day of the week
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-plus-circle change-new"></i>
+                    <div>
+                        <span class="change-type type-new">New</span>
+                        <strong>Priority & Categories</strong> - Assign priorities and categories to tasks
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-plus-circle change-new"></i>
+                    <div>
+                        <span class="change-type type-new">New</span>
+                        <strong>Subtasks</strong> - Break down tasks into smaller steps
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-plus-circle change-new"></i>
+                    <div>
+                        <span class="change-type type-new">New</span>
+                        <strong>Dark Mode</strong> - Toggle between light and dark themes
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-plus-circle change-new"></i>
+                    <div>
+                        <span class="change-type type-new">New</span>
+                        <strong>Import/Export</strong> - Backup and restore your tasks
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-plus-circle change-new"></i>
+                    <div>
+                        <span class="change-type type-new">New</span>
+                        <strong>Weekly Reports</strong> - View productivity insights
+                    </div>
+                </li>
+            </ul>
+        </article>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer-simple">
+        <p>&copy; 2026 Weekly Todo. All rights reserved.</p>
+        <nav class="footer-nav">
+            <a href="index.html">Home</a>
+            <span class="separator">•</span>
+            <a href="tos.html">Terms</a>
+            <span class="separator">•</span>
+            <a href="privacy.html">Privacy</a>
+        </nav>
+    </footer>
+
+    <script>
+        // Theme initialization
+        (function() {
+            var savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+            }
+        })();
+    </script>
+</body>
+</html>

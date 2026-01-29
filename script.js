@@ -72,6 +72,8 @@ window.addEventListener('load', function() {
     renderAllTasks();
     setupEventListeners();
     updateProfileDisplay();
+    updateCoinsDisplay(); // Initialize coin display
+    updateFeatureLockStates(); // Initialize feature lock states
 });
 
 // Check if new week started and save report
@@ -191,10 +193,27 @@ function resetWeeklyData() {
 }
 
 function setupEventListeners() {
-    // Setup form submission
+    // Setup form submission - only via button click
     var taskForm = document.getElementById('taskForm');
     if (taskForm) {
+        // Prevent default form submission on Enter
         taskForm.addEventListener('submit', handleFormSubmit);
+        
+        // Setup Enter key to move to next field instead of submitting
+        taskForm.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                
+                // Get all focusable inputs in the form
+                var inputs = Array.from(taskForm.querySelectorAll('input:not([type="checkbox"]), select, textarea'));
+                var currentIndex = inputs.indexOf(e.target);
+                
+                // Move to next input if exists
+                if (currentIndex !== -1 && currentIndex < inputs.length - 1) {
+                    inputs[currentIndex + 1].focus();
+                }
+            }
+        });
     }
     
     // Setup modal click outside to close
@@ -253,73 +272,666 @@ function updateThemeIcons() {
     }
 }
 
-// Focus Mode Functions
+// Focus Mode Functions - Premium Full-Screen Experience
 function toggleFocusMode() {
     focusModeEnabled = !focusModeEnabled;
-    inboxViewEnabled = false;
     
+    var focusOverlay = document.getElementById('focusModeOverlay');
     var focusIcon = document.getElementById('focusIcon');
-    var weekGrid = document.querySelector('.week-grid');
-    var container = document.querySelector('.container');
-    
-    // Hide inbox container if it exists
-    var inboxContainer = document.getElementById('inbox-container');
-    if (inboxContainer) {
-        inboxContainer.style.display = 'none';
-    }
-    
-    // Show week grid
-    if (weekGrid) {
-        weekGrid.style.display = 'grid';
-    }
     
     if (focusModeEnabled) {
-        // Get current day of week
-        var days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        var today = new Date().getDay();
-        currentDayOfWeek = days[today];
+        // Show premium focus mode overlay
+        if (focusOverlay) {
+            focusOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
         
-        // Add focus mode classes
-        if (container) container.classList.add('focus-mode-active');
-        if (weekGrid) weekGrid.classList.add('focus-mode');
+        // Update header icon
         if (focusIcon) {
-            focusIcon.className = 'fas fa-times-circle';
+            focusIcon.className = 'fas fa-times';
             focusIcon.parentElement.classList.add('active');
         }
         
-        // Hide all day cards except current day
-        var dayCards = document.querySelectorAll('.day-card');
-        for (var i = 0; i < dayCards.length; i++) {
-            var dayCard = dayCards[i];
-            var day = dayCard.getAttribute('data-day');
-            
-            if (day === currentDayOfWeek) {
-                dayCard.classList.add('focus-active');
-                dayCard.classList.remove('focus-hidden');
-            } else {
-                dayCard.classList.add('focus-hidden');
-                dayCard.classList.remove('focus-active');
-            }
+        // Initialize focus mode
+        initializeFocusMode();
+        startFocusClock();
+        
+    } else {
+        // Hide focus mode overlay
+        if (focusOverlay) {
+            focusOverlay.classList.remove('active');
+            document.body.style.overflow = '';
         }
         
-        showNotification('Focus Mode: Showing ' + capitalizeFirstLetter(currentDayOfWeek) + ' tasks only', 'success');
-    } else {
-        // Remove focus mode classes
-        if (container) container.classList.remove('focus-mode-active');
-        if (weekGrid) weekGrid.classList.remove('focus-mode');
+        // Reset header icon
         if (focusIcon) {
             focusIcon.className = 'fas fa-bullseye';
             focusIcon.parentElement.classList.remove('active');
         }
         
-        // Show all day cards
-        var dayCards = document.querySelectorAll('.day-card');
-        for (var i = 0; i < dayCards.length; i++) {
-            dayCards[i].classList.remove('focus-hidden', 'focus-active');
+        // Stop the clock
+        if (focusClockInterval) {
+            clearInterval(focusClockInterval);
+            focusClockInterval = null;
+        }
+    }
+}
+
+var focusClockInterval = null;
+
+function initializeFocusMode() {
+    // Get current day
+    var days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    var dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    var today = new Date().getDay();
+    var currentDayKey = days[today];
+    var currentDayName = dayNames[today];
+    
+    // Update day name in header
+    var focusDayName = document.getElementById('focusDayName');
+    if (focusDayName) {
+        focusDayName.textContent = currentDayName + "'s Tasks";
+    }
+    
+    // Update date display
+    var focusDate = document.getElementById('focusDate');
+    if (focusDate) {
+        var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        focusDate.textContent = new Date().toLocaleDateString('en-US', options);
+    }
+    
+    // Load motivational quote
+    loadFocusQuote();
+    
+    // Render tasks for today
+    renderFocusTasks(currentDayKey);
+}
+
+function startFocusClock() {
+    updateFocusClock();
+    focusClockInterval = setInterval(updateFocusClock, 1000);
+}
+
+function updateFocusClock() {
+    var clockElement = document.getElementById('focusClock');
+    if (clockElement) {
+        var now = new Date();
+        var hours = String(now.getHours()).padStart(2, '0');
+        var minutes = String(now.getMinutes()).padStart(2, '0');
+        var seconds = String(now.getSeconds()).padStart(2, '0');
+        clockElement.textContent = hours + ':' + minutes + ':' + seconds;
+    }
+}
+
+function renderFocusTasks(day) {
+    var tasksList = document.getElementById('focusTasksList');
+    var emptyState = document.getElementById('focusEmptyState');
+    var dayTasks = tasks[day] || [];
+    
+    if (!tasksList) return;
+    
+    // Update stats
+    var totalTasks = dayTasks.length;
+    var completedTasks = dayTasks.filter(function(t) { return t.completed; }).length;
+    var progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    
+    var totalEl = document.getElementById('focusTotalTasks');
+    var completedEl = document.getElementById('focusCompletedTasks');
+    var progressEl = document.getElementById('focusProgressPercent');
+    var progressBar = document.getElementById('focusProgressBar');
+    
+    if (totalEl) totalEl.textContent = totalTasks;
+    if (completedEl) completedEl.textContent = completedTasks;
+    if (progressEl) progressEl.textContent = progressPercent + '%';
+    if (progressBar) progressBar.style.width = progressPercent + '%';
+    
+    // Show empty state or tasks
+    if (dayTasks.length === 0) {
+        tasksList.style.display = 'none';
+        if (emptyState) emptyState.classList.add('show');
+        return;
+    }
+    
+    tasksList.style.display = 'flex';
+    if (emptyState) emptyState.classList.remove('show');
+    
+    // Render task items
+    tasksList.innerHTML = '';
+    
+    dayTasks.forEach(function(task) {
+        var taskItem = document.createElement('div');
+        taskItem.className = 'focus-task-item priority-' + task.priority + (task.completed ? ' completed' : '');
+        taskItem.setAttribute('data-task-id', task.id);
+        
+        var categoryIcons = {
+            work: 'fa-briefcase',
+            personal: 'fa-user',
+            health: 'fa-heartbeat',
+            study: 'fa-book',
+            other: 'fa-circle'
+        };
+        
+        var metaHTML = '';
+        if (task.time) {
+            metaHTML += '<span class="focus-task-tag time"><i class="fas fa-clock"></i> ' + task.time + '</span>';
+        }
+        if (task.category) {
+            metaHTML += '<span class="focus-task-tag category"><i class="fas ' + categoryIcons[task.category] + '"></i> ' + capitalizeFirstLetter(task.category) + '</span>';
+        }
+        if (task.priority) {
+            metaHTML += '<span class="focus-task-tag"><i class="fas fa-flag"></i> ' + capitalizeFirstLetter(task.priority) + '</span>';
         }
         
-        showNotification('Focus Mode disabled', 'info');
+        taskItem.innerHTML = 
+            '<div class="focus-task-checkbox ' + (task.completed ? 'checked' : '') + '" onclick="toggleFocusTaskComplete(\'' + day + '\', ' + task.id + ')"></div>' +
+            '<div class="focus-task-content">' +
+                '<div class="focus-task-title">' + task.title + '</div>' +
+                '<div class="focus-task-meta">' + metaHTML + '</div>' +
+            '</div>' +
+            '<div class="focus-task-actions">' +
+                '<button class="focus-task-action-btn" onclick="editTaskFromFocus(\'' + day + '\', ' + task.id + ')" title="Edit">' +
+                    '<i class="fas fa-pen"></i>' +
+                '</button>' +
+                '<button class="focus-task-action-btn delete" onclick="deleteTaskFromFocus(\'' + day + '\', ' + task.id + ')" title="Delete">' +
+                    '<i class="fas fa-trash"></i>' +
+                '</button>' +
+            '</div>';
+        
+        tasksList.appendChild(taskItem);
+    });
+}
+
+function toggleFocusTaskComplete(day, taskId) {
+    playSound('complete');
+    
+    for (var i = 0; i < tasks[day].length; i++) {
+        if (tasks[day][i].id === taskId) {
+            var wasCompleted = tasks[day][i].completed;
+            tasks[day][i].completed = !tasks[day][i].completed;
+            
+            if (!wasCompleted && tasks[day][i].completed) {
+                // Award coins for completing task
+                addCoins(COINS_PER_TASK, 'Completed task: ' + tasks[day][i].title);
+                
+                var profile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+                var name = profile.name && profile.name.trim() !== '' ? profile.name : '';
+                var messages = [
+                    'Great job' + (name ? ', ' + name : '') + '! +' + COINS_PER_TASK + ' coins! <i class="fas fa-sparkles"></i>',
+                    'Awesome work' + (name ? ', ' + name : '') + '! +' + COINS_PER_TASK + ' coins! <i class="fas fa-dumbbell"></i>',
+                    'Well done' + (name ? ', ' + name : '') + '! +' + COINS_PER_TASK + ' coins! <i class="fas fa-star"></i>',
+                    'You\'re crushing it' + (name ? ', ' + name : '') + '! +' + COINS_PER_TASK + ' coins! <i class="fas fa-fire"></i>'
+                ];
+                showNotification(messages[Math.floor(Math.random() * messages.length)], 'success');
+            } else if (wasCompleted && !tasks[day][i].completed) {
+                // Remove coins if uncompleting task
+                removeCoins(COINS_PER_TASK);
+            }
+            
+            saveTasksToStorage();
+            renderFocusTasks(day);
+            renderTasks(day);
+            updateHeaderStats();
+            break;
+        }
     }
+}
+
+function editTaskFromFocus(day, taskId) {
+    toggleFocusMode(); // Close focus mode
+    setTimeout(function() {
+        editTask(day, taskId);
+    }, 300);
+}
+
+function deleteTaskFromFocus(day, taskId) {
+    showConfirm('Delete this task?', function(confirmed) {
+        if (confirmed) {
+            for (var i = 0; i < tasks[day].length; i++) {
+                if (tasks[day][i].id === taskId) {
+                    tasks[day].splice(i, 1);
+                    break;
+                }
+            }
+            saveTasksToStorage();
+            renderFocusTasks(day);
+            renderTasks(day);
+            showNotification('Task deleted', 'success');
+        }
+    });
+}
+
+function openTaskModalFromFocus() {
+    var days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    var today = new Date().getDay();
+    var currentDayKey = days[today];
+    
+    // Open task modal without closing focus mode
+    openTaskModal(currentDayKey);
+}
+
+// ===== WEEKLY COINS SYSTEM =====
+var COINS_PER_TASK = 5;
+var COINS_PER_SUBTASK = 0.5;
+
+function getCoinsData() {
+    var data = JSON.parse(localStorage.getItem('weeklyCoins') || '{}');
+    var currentWeek = getWeekNumber();
+    
+    // Reset coins if it's a new week
+    if (data.week !== currentWeek) {
+        data = {
+            week: currentWeek,
+            coins: 0,
+            totalEarned: data.totalEarned || 0,
+            history: data.history || []
+        };
+        saveCoinsData(data);
+    }
+    return data;
+}
+
+function saveCoinsData(data) {
+    localStorage.setItem('weeklyCoins', JSON.stringify(data));
+}
+
+function getWeekNumber() {
+    var now = new Date();
+    var start = new Date(now.getFullYear(), 0, 1);
+    var diff = now - start;
+    var oneWeek = 604800000; // milliseconds in a week
+    return Math.floor(diff / oneWeek) + '-' + now.getFullYear();
+}
+
+function addCoins(amount, reason) {
+    var data = getCoinsData();
+    data.coins += amount;
+    data.totalEarned = (data.totalEarned || 0) + amount;
+    
+    // Add to history
+    if (!data.history) data.history = [];
+    data.history.push({
+        amount: amount,
+        reason: reason,
+        timestamp: new Date().toISOString()
+    });
+    
+    // Keep only last 50 entries
+    if (data.history.length > 50) {
+        data.history = data.history.slice(-50);
+    }
+    
+    saveCoinsData(data);
+    updateCoinsDisplay();
+    showCoinAnimation(amount);
+}
+
+function removeCoins(amount) {
+    var data = getCoinsData();
+    data.coins = Math.max(0, data.coins - amount);
+    saveCoinsData(data);
+    updateCoinsDisplay();
+}
+
+function updateCoinsDisplay() {
+    var data = getCoinsData();
+    var coinsEl = document.getElementById('weeklyCoins');
+    if (coinsEl) {
+        coinsEl.textContent = data.coins.toFixed(1);
+        // Add pulse animation
+        coinsEl.classList.add('coin-pulse');
+        setTimeout(function() {
+            coinsEl.classList.remove('coin-pulse');
+        }, 600);
+    }
+}
+
+function showCoinAnimation(amount) {
+    var coinPopup = document.createElement('div');
+    coinPopup.className = 'coin-popup';
+    coinPopup.innerHTML = '<i class="fas fa-coins"></i> +' + amount.toFixed(1);
+    document.body.appendChild(coinPopup);
+    
+    setTimeout(function() {
+        coinPopup.classList.add('show');
+    }, 10);
+    
+    setTimeout(function() {
+        coinPopup.classList.add('fade-out');
+        setTimeout(function() {
+            coinPopup.remove();
+        }, 500);
+    }, 2000);
+}
+
+function showCoinsHistory() {
+    var data = getCoinsData();
+    
+    // Create modal overlay
+    var overlay = document.createElement('div');
+    overlay.className = 'modal-overlay active';
+    overlay.id = 'coinsHistoryModal';
+    overlay.onclick = function(e) {
+        if (e.target === overlay) closeCoinsHistory();
+    };
+    
+    var currentCoins = data.coins.toFixed(1);
+    var totalEarned = (data.totalEarned || 0).toFixed(1);
+    var history = data.history || [];
+    
+    var historyHtml = '';
+    if (history.length === 0) {
+        historyHtml = '<div class="coins-empty"><i class="fas fa-coins"></i><p>No coin activity yet. Complete tasks to earn coins!</p></div>';
+    } else {
+        // Show last 20 entries, newest first
+        var recentHistory = history.slice(-20).reverse();
+        recentHistory.forEach(function(entry) {
+            var date = new Date(entry.timestamp);
+            var timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            var dateStr = date.toLocaleDateString([], {month: 'short', day: 'numeric'});
+            historyHtml += '<div class="coin-history-item">' +
+                '<div class="coin-history-left">' +
+                    '<span class="coin-amount">+' + entry.amount.toFixed(1) + '</span>' +
+                    '<span class="coin-reason">' + (entry.reason || 'Task completed') + '</span>' +
+                '</div>' +
+                '<div class="coin-history-time">' + dateStr + ' ' + timeStr + '</div>' +
+            '</div>';
+        });
+    }
+    
+    overlay.innerHTML = 
+        '<div class="modal-content coins-modal">' +
+            '<div class="modal-header">' +
+                '<div class="modal-title-wrapper">' +
+                    '<i class="fas fa-coins" style="color: #ffc107;"></i>' +
+                    '<h3>Weekly Coins</h3>' +
+                '</div>' +
+                '<button class="close-btn" onclick="closeCoinsHistory()">' +
+                    '<i class="fas fa-times"></i>' +
+                '</button>' +
+            '</div>' +
+            '<div class="modal-body">' +
+                '<div class="coins-stats-grid">' +
+                    '<div class="coins-stat-card current">' +
+                        '<div class="coins-stat-icon"><i class="fas fa-wallet"></i></div>' +
+                        '<div class="coins-stat-info">' +
+                            '<span class="coins-stat-value">' + currentCoins + '</span>' +
+                            '<span class="coins-stat-label">This Week</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="coins-stat-card total">' +
+                        '<div class="coins-stat-icon"><i class="fas fa-piggy-bank"></i></div>' +
+                        '<div class="coins-stat-info">' +
+                            '<span class="coins-stat-value">' + totalEarned + '</span>' +
+                            '<span class="coins-stat-label">All Time</span>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="coins-info-card">' +
+                    '<h4><i class="fas fa-info-circle"></i> How to Earn</h4>' +
+                    '<div class="coins-info-items">' +
+                        '<div class="coins-info-item"><i class="fas fa-check-circle"></i> Complete a task <span>+5 coins</span></div>' +
+                        '<div class="coins-info-item"><i class="fas fa-check"></i> Complete a subtask <span>+0.5 coins</span></div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="coins-history-section">' +
+                    '<h4><i class="fas fa-history"></i> Recent Activity</h4>' +
+                    '<div class="coins-history-list">' + historyHtml + '</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    
+    document.body.appendChild(overlay);
+}
+
+function closeCoinsHistory() {
+    var modal = document.getElementById('coinsHistoryModal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(function() {
+            modal.remove();
+        }, 300);
+    }
+}
+
+// ===== FEATURE UNLOCK SYSTEM =====
+var FEATURE_COSTS = {
+    calendar: 15,
+    focusMode: 25,
+    agent: 50
+};
+
+function getUnlockedFeatures() {
+    return JSON.parse(localStorage.getItem('unlockedFeatures') || '{}');
+}
+
+function saveUnlockedFeatures(features) {
+    localStorage.setItem('unlockedFeatures', JSON.stringify(features));
+}
+
+function isFeatureUnlocked(featureName) {
+    var features = getUnlockedFeatures();
+    return features[featureName] === true;
+}
+
+function unlockFeature(featureName) {
+    var cost = FEATURE_COSTS[featureName];
+    var data = getCoinsData();
+    
+    if (data.coins >= cost) {
+        // Deduct coins
+        data.coins -= cost;
+        saveCoinsData(data);
+        updateCoinsDisplay();
+        
+        // Unlock feature
+        var features = getUnlockedFeatures();
+        features[featureName] = true;
+        saveUnlockedFeatures(features);
+        
+        // Update UI
+        updateFeatureLockStates();
+        
+        return true;
+    }
+    return false;
+}
+
+function tryAccessFeature(featureName, callback) {
+    if (isFeatureUnlocked(featureName)) {
+        callback();
+        return;
+    }
+    
+    var cost = FEATURE_COSTS[featureName];
+    var data = getCoinsData();
+    var featureNames = {
+        calendar: 'Calendar',
+        focusMode: 'Focus Mode',
+        agent: 'Weekly Agent'
+    };
+    var featureIcons = {
+        calendar: 'fa-calendar-alt',
+        focusMode: 'fa-bullseye',
+        agent: 'fa-robot'
+    };
+    
+    showUnlockModal(featureName, featureNames[featureName], featureIcons[featureName], cost, data.coins);
+}
+
+function showUnlockModal(featureKey, featureName, featureIcon, cost, currentCoins) {
+    var canUnlock = currentCoins >= cost;
+    
+    var overlay = document.createElement('div');
+    overlay.className = 'modal-overlay active';
+    overlay.id = 'unlockModal';
+    overlay.onclick = function(e) {
+        if (e.target === overlay) closeUnlockModal();
+    };
+    
+    overlay.innerHTML = 
+        '<div class="modal-content unlock-modal">' +
+            '<div class="unlock-modal-header">' +
+                '<div class="unlock-feature-icon ' + (canUnlock ? 'can-unlock' : 'locked') + '">' +
+                    '<i class="fas ' + featureIcon + '"></i>' +
+                    '<div class="lock-badge"><i class="fas fa-lock"></i></div>' +
+                '</div>' +
+                '<button class="close-btn" onclick="closeUnlockModal()">' +
+                    '<i class="fas fa-times"></i>' +
+                '</button>' +
+            '</div>' +
+            '<div class="unlock-modal-body">' +
+                '<h2>Unlock ' + featureName + '</h2>' +
+                '<p class="unlock-description">This premium feature requires coins to unlock. Once unlocked, it stays unlocked forever!</p>' +
+                '<div class="unlock-cost-display">' +
+                    '<div class="cost-item">' +
+                        '<span class="cost-label">Cost</span>' +
+                        '<span class="cost-value"><i class="fas fa-coins"></i> ' + cost + '</span>' +
+                    '</div>' +
+                    '<div class="cost-divider"></div>' +
+                    '<div class="cost-item">' +
+                        '<span class="cost-label">Your Coins</span>' +
+                        '<span class="cost-value ' + (canUnlock ? 'enough' : 'not-enough') + '"><i class="fas fa-wallet"></i> ' + currentCoins.toFixed(1) + '</span>' +
+                    '</div>' +
+                '</div>' +
+                (canUnlock ? 
+                    '<button class="btn-unlock" onclick="confirmUnlock(\'' + featureKey + '\')">' +
+                        '<i class="fas fa-unlock"></i> Unlock Now' +
+                    '</button>' :
+                    '<div class="not-enough-coins">' +
+                        '<i class="fas fa-exclamation-circle"></i>' +
+                        '<span>You need <strong>' + (cost - currentCoins).toFixed(1) + '</strong> more coins</span>' +
+                    '</div>' +
+                    '<p class="earn-hint"><i class="fas fa-lightbulb"></i> Complete tasks to earn more coins!</p>'
+                ) +
+            '</div>' +
+        '</div>';
+    
+    document.body.appendChild(overlay);
+}
+
+function closeUnlockModal() {
+    var modal = document.getElementById('unlockModal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(function() {
+            modal.remove();
+        }, 300);
+    }
+}
+
+function confirmUnlock(featureKey) {
+    var featureNames = {
+        calendar: 'Calendar',
+        focusMode: 'Focus Mode',
+        agent: 'Weekly Agent'
+    };
+    
+    if (unlockFeature(featureKey)) {
+        closeUnlockModal();
+        showNotification('<i class="fas fa-unlock"></i> ' + featureNames[featureKey] + ' unlocked!', 'success');
+        
+        // Auto-trigger the feature after unlock
+        setTimeout(function() {
+            if (featureKey === 'focusMode') {
+                toggleFocusMode();
+            } else if (featureKey === 'calendar') {
+                window.location.href = 'calendar.html';
+            } else if (featureKey === 'agent') {
+                window.location.href = 'agent.html';
+            }
+        }, 500);
+    }
+}
+
+function updateFeatureLockStates() {
+    var focusBtn = document.querySelector('.action-icon-btn[onclick*="toggleFocusMode"], .action-icon-btn[onclick*="tryFocusMode"]');
+    var calendarBtn = document.querySelector('.action-icon-btn[href="calendar.html"], a.action-icon-btn[onclick*="tryCalendar"]');
+    var agentBtn = document.querySelector('.action-icon-btn[href="agent.html"], a.action-icon-btn[onclick*="tryAgent"]');
+    
+    // Update Focus Mode button
+    if (focusBtn) {
+        if (isFeatureUnlocked('focusMode')) {
+            focusBtn.classList.remove('feature-locked');
+            focusBtn.setAttribute('onclick', 'toggleFocusMode()');
+            focusBtn.innerHTML = '<i class="fas fa-bullseye" id="focusIcon"></i>';
+        } else {
+            focusBtn.classList.add('feature-locked');
+            focusBtn.setAttribute('onclick', 'tryFocusMode()');
+            focusBtn.innerHTML = '<i class="fas fa-bullseye"></i><span class="lock-indicator"><i class="fas fa-lock"></i></span>';
+        }
+    }
+    
+    // Update Calendar button
+    if (calendarBtn) {
+        if (isFeatureUnlocked('calendar')) {
+            calendarBtn.classList.remove('feature-locked');
+            calendarBtn.removeAttribute('onclick');
+            calendarBtn.setAttribute('href', 'calendar.html');
+            calendarBtn.innerHTML = '<i class="fas fa-calendar-alt"></i>';
+        } else {
+            calendarBtn.classList.add('feature-locked');
+            calendarBtn.setAttribute('onclick', 'tryCalendar(event)');
+            calendarBtn.setAttribute('href', '#');
+            calendarBtn.innerHTML = '<i class="fas fa-calendar-alt"></i><span class="lock-indicator"><i class="fas fa-lock"></i></span>';
+        }
+    }
+    
+    // Update Agent button
+    if (agentBtn) {
+        if (isFeatureUnlocked('agent')) {
+            agentBtn.classList.remove('feature-locked');
+            agentBtn.removeAttribute('onclick');
+            agentBtn.setAttribute('href', 'agent.html');
+            agentBtn.innerHTML = '<i class="fas fa-robot"></i>';
+        } else {
+            agentBtn.classList.add('feature-locked');
+            agentBtn.setAttribute('onclick', 'tryAgent(event)');
+            agentBtn.setAttribute('href', '#');
+            agentBtn.innerHTML = '<i class="fas fa-robot"></i><span class="lock-indicator"><i class="fas fa-lock"></i></span>';
+        }
+    }
+}
+
+function tryFocusMode() {
+    tryAccessFeature('focusMode', function() {
+        toggleFocusMode();
+    });
+}
+
+function tryCalendar(event) {
+    if (event) event.preventDefault();
+    tryAccessFeature('calendar', function() {
+        window.location.href = 'calendar.html';
+    });
+}
+
+function tryAgent(event) {
+    if (event) event.preventDefault();
+    tryAccessFeature('agent', function() {
+        window.location.href = 'agent.html';
+    });
+}
+
+var focusQuotes = [
+    { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+    { text: "Focus on being productive instead of busy.", author: "Tim Ferriss" },
+    { text: "It's not that I'm so smart, it's just that I stay with problems longer.", author: "Albert Einstein" },
+    { text: "The key is not to prioritize what's on your schedule, but to schedule your priorities.", author: "Stephen Covey" },
+    { text: "Do the hard jobs first. The easy jobs will take care of themselves.", author: "Dale Carnegie" },
+    { text: "Concentrate all your thoughts upon the work in hand.", author: "Alexander Graham Bell" },
+    { text: "Start where you are. Use what you have. Do what you can.", author: "Arthur Ashe" },
+    { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+    { text: "Your focus determines your reality.", author: "George Lucas" },
+    { text: "Starve your distractions, feed your focus.", author: "Unknown" }
+];
+
+function loadFocusQuote() {
+    var quote = focusQuotes[Math.floor(Math.random() * focusQuotes.length)];
+    var quoteEl = document.getElementById('focusQuote');
+    var authorEl = document.getElementById('focusQuoteAuthor');
+    
+    if (quoteEl) quoteEl.textContent = quote.text;
+    if (authorEl) authorEl.textContent = '— ' + quote.author;
 }
 
 // Profile Modal Functions
@@ -374,15 +986,18 @@ function saveProfile() {
 function updateProfileDisplay() {
     var profile = JSON.parse(localStorage.getItem('userProfile') || '{}');
     var displayElement = document.getElementById('profileNameDisplay');
+    var avatarElement = document.getElementById('profileAvatarDisplay');
+    
+    var name = (profile.name && profile.name.trim() !== '') ? profile.name : 'Guest';
+    var initials = name.split(' ').map(function(n) { return n.charAt(0); }).join('').toUpperCase().substring(0, 2);
     
     if (displayElement) {
-        if (profile.name && profile.name.trim() !== '') {
-            displayElement.textContent = profile.name;
-            displayElement.style.display = 'block';
-        } else {
-            displayElement.textContent = 'Guest';
-            displayElement.style.display = 'block';
-        }
+        displayElement.textContent = name;
+        displayElement.style.display = 'block';
+    }
+    
+    if (avatarElement) {
+        avatarElement.textContent = initials || 'G';
     }
 }
 
@@ -509,9 +1124,7 @@ function handleFileImport(event) {
 // Filter functions
 function filterTasks() {
     var searchInput = document.getElementById('searchInput');
-    if (!searchInput) return;
-    
-    var searchTerm = searchInput.value.toLowerCase();
+    var searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
     
     var days = Object.keys(tasks);
     for (var i = 0; i < days.length; i++) {
@@ -523,7 +1136,8 @@ function filterTasks() {
             var taskElement = document.querySelector('[data-task-id="' + task.id + '"]');
             if (!taskElement) continue;
             
-            var matchesSearch = task.title.toLowerCase().indexOf(searchTerm) !== -1 ||
+            var matchesSearch = !searchTerm || 
+                              task.title.toLowerCase().indexOf(searchTerm) !== -1 ||
                               (task.description && task.description.toLowerCase().indexOf(searchTerm) !== -1);
             
             var matchesFilter = 
@@ -546,7 +1160,7 @@ function filterByStatus(status) {
     inboxViewEnabled = false;
     
     // Show week grid if it was hidden
-    var weekGrid = document.querySelector('.week-grid');
+    var weekGrid = document.querySelector('.week-grid, .week-grid-modern');
     if (weekGrid) {
         weekGrid.style.display = 'grid';
     }
@@ -557,14 +1171,14 @@ function filterByStatus(status) {
         inboxContainer.style.display = 'none';
     }
     
-    // Update active filter button
-    var filterBtns = document.querySelectorAll('.filter-btn');
+    // Update active filter button (both old and new styles)
+    var filterBtns = document.querySelectorAll('.filter-btn, .filter-pill');
     for (var i = 0; i < filterBtns.length; i++) {
         filterBtns[i].classList.remove('active');
     }
     
     // Add active class to clicked button
-    var clickedBtn = event && event.target ? event.target.closest('.filter-btn') : null;
+    var clickedBtn = event && event.target ? event.target.closest('.filter-btn, .filter-pill') : null;
     if (clickedBtn) {
         clickedBtn.classList.add('active');
     }
@@ -577,7 +1191,7 @@ function filterByPriority(priority) {
     inboxViewEnabled = false;
     
     // Show week grid if it was hidden
-    var weekGrid = document.querySelector('.week-grid');
+    var weekGrid = document.querySelector('.week-grid, .week-grid-modern');
     if (weekGrid) {
         weekGrid.style.display = 'grid';
     }
@@ -588,14 +1202,14 @@ function filterByPriority(priority) {
         inboxContainer.style.display = 'none';
     }
     
-    // Update active filter button
-    var filterBtns = document.querySelectorAll('.filter-btn');
+    // Update active filter button (both old and new styles)
+    var filterBtns = document.querySelectorAll('.filter-btn, .filter-pill');
     for (var i = 0; i < filterBtns.length; i++) {
         filterBtns[i].classList.remove('active');
     }
     
     // Add active class to clicked button
-    var clickedBtn = event && event.target ? event.target.closest('.filter-btn') : null;
+    var clickedBtn = event && event.target ? event.target.closest('.filter-btn, .filter-pill') : null;
     if (clickedBtn) {
         clickedBtn.classList.add('active');
     }
@@ -608,8 +1222,8 @@ function showInboxView() {
     inboxViewEnabled = true;
     currentFilter = 'all';
     
-    // Update active filter button
-    var filterBtns = document.querySelectorAll('.filter-btn');
+    // Update active filter button (both old and new styles)
+    var filterBtns = document.querySelectorAll('.filter-btn, .filter-pill');
     for (var i = 0; i < filterBtns.length; i++) {
         filterBtns[i].classList.remove('active');
     }
@@ -621,7 +1235,7 @@ function showInboxView() {
     }
     
     // Hide the week grid
-    var weekGrid = document.querySelector('.week-grid');
+    var weekGrid = document.querySelector('.week-grid, .week-grid-modern');
     if (weekGrid) {
         weekGrid.style.display = 'none';
     }
@@ -1398,7 +2012,7 @@ function insertExample(text) {
     input.style.height = input.scrollHeight + 'px';
     
     // Show a hint
-    showNotification('✨ Example inserted! Click send to add this task', 'info');
+    showNotification('<i class="fas fa-magic"></i> Example inserted! Click send to add this task', 'info');
 }
 
 function sendChatMessage() {
@@ -1612,7 +2226,7 @@ function processChatMessage(message) {
         addChatMessage(responseHtml, 'bot');
         
         // Show notification
-        showNotification('✨ AI added ' + addedCount + ' task' + (addedCount > 1 ? 's' : '') + '!', 'success');
+        showNotification('<i class="fas fa-robot"></i> AI added ' + addedCount + ' task' + (addedCount > 1 ? 's' : '') + '!', 'success');
     }, 1000);
 }
 
@@ -2077,9 +2691,54 @@ function closeTaskModal() {
     editingTaskId = null;
 }
 
-// Subtask Management
-function addSubtaskInput(text) {
-    var container = document.getElementById('subtasksContainer');
+// Subtask Group Management
+function addSubtaskGroup() {
+    var container = document.getElementById('subtaskGroupsContainer');
+    if (!container) return;
+    
+    var group = document.createElement('div');
+    group.className = 'subtask-group';
+    group.setAttribute('data-group', 'group-' + Date.now());
+    
+    group.innerHTML = 
+        '<div class="subtask-group-header">' +
+            '<input type="text" class="subtask-group-name" placeholder="Group name (e.g., \'Research\', \'Steps\')">' +
+            '<button type="button" class="btn-remove-group" onclick="removeSubtaskGroup(this)" title="Remove Group">' +
+                '<i class="fas fa-trash"></i>' +
+            '</button>' +
+        '</div>' +
+        '<div class="subtasks-container"></div>' +
+        '<button type="button" class="btn-add-subtask" onclick="addSubtaskToGroup(this)">' +
+            '<i class="fas fa-plus"></i> Add Item' +
+        '</button>';
+    
+    container.appendChild(group);
+    playSound('click');
+    
+    // Focus on the group name input
+    var nameInput = group.querySelector('.subtask-group-name');
+    if (nameInput) nameInput.focus();
+}
+
+function removeSubtaskGroup(btn) {
+    var group = btn.closest('.subtask-group');
+    var container = document.getElementById('subtaskGroupsContainer');
+    
+    // Don't remove if it's the only group
+    if (container && container.querySelectorAll('.subtask-group').length <= 1) {
+        showNotification('You need at least one group', 'error');
+        return;
+    }
+    
+    if (group) {
+        group.remove();
+        playSound('click');
+    }
+}
+
+function addSubtaskToGroup(btn) {
+    var group = btn.closest('.subtask-group');
+    var container = group.querySelector('.subtasks-container');
     if (!container) return;
     
     var wrapper = document.createElement('div');
@@ -2087,9 +2746,8 @@ function addSubtaskInput(text) {
     
     var input = document.createElement('input');
     input.type = 'text';
-    input.placeholder = 'Enter subtask...';
+    input.placeholder = 'Enter item...';
     input.className = 'subtask-input';
-    if (text) input.value = text;
     
     var removeBtn = document.createElement('button');
     removeBtn.type = 'button';
@@ -2105,37 +2763,151 @@ function addSubtaskInput(text) {
     container.appendChild(wrapper);
     
     playSound('click');
+    input.focus();
+}
+
+// Legacy function for backward compatibility
+function addSubtaskInput(text) {
+    var defaultGroup = document.querySelector('#subtaskGroupsContainer .subtask-group');
+    if (!defaultGroup) return;
+    
+    var container = defaultGroup.querySelector('.subtasks-container');
+    if (!container) return;
+    
+    var wrapper = document.createElement('div');
+    wrapper.className = 'subtask-input-wrapper';
+    
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Enter item...';
+    input.className = 'subtask-input';
+    if (text) input.value = text;
+    
+    var removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn-remove-subtask';
+    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    removeBtn.onclick = function() {
+        playSound('click');
+        wrapper.remove();
+    };
+    
+    wrapper.appendChild(input);
+    wrapper.appendChild(removeBtn);
+    container.appendChild(wrapper);
 }
 
 function getSubtasksFromForm() {
-    var inputs = document.querySelectorAll('#subtasksContainer .subtask-input');
-    var subtasks = [];
+    var groups = document.querySelectorAll('#subtaskGroupsContainer .subtask-group');
+    var subtaskGroups = [];
     
-    for (var i = 0; i < inputs.length; i++) {
-        var text = inputs[i].value.trim();
-        if (text) {
-            subtasks.push({
-                id: Date.now() + i,
-                text: text,
-                completed: false
+    groups.forEach(function(group) {
+        var groupName = group.querySelector('.subtask-group-name').value.trim() || 'Tasks';
+        var inputs = group.querySelectorAll('.subtasks-container .subtask-input');
+        var items = [];
+        
+        inputs.forEach(function(input, index) {
+            var text = input.value.trim();
+            if (text) {
+                items.push({
+                    id: Date.now() + index + Math.random(),
+                    text: text,
+                    completed: false
+                });
+            }
+        });
+        
+        if (items.length > 0 || groupName !== 'Tasks') {
+            subtaskGroups.push({
+                name: groupName,
+                items: items
             });
         }
-    }
+    });
     
-    return subtasks;
+    return subtaskGroups;
 }
 
-function loadSubtasksToForm(subtasks) {
-    var container = document.getElementById('subtasksContainer');
-    if (container) {
-        container.innerHTML = '';
-    }
+function loadSubtasksToForm(subtaskGroups) {
+    var container = document.getElementById('subtaskGroupsContainer');
+    if (!container) return;
     
-    if (subtasks && subtasks.length > 0) {
-        for (var i = 0; i < subtasks.length; i++) {
-            addSubtaskInput(subtasks[i].text);
+    // Clear existing groups
+    container.innerHTML = '';
+    
+    // Handle old format (array of subtasks) or new format (array of groups)
+    if (subtaskGroups && subtaskGroups.length > 0) {
+        // Check if it's old format (direct subtask items)
+        if (subtaskGroups[0].text !== undefined) {
+            // Old format - convert to new format
+            var group = createSubtaskGroupElement('Tasks');
+            container.appendChild(group);
+            var groupContainer = group.querySelector('.subtasks-container');
+            subtaskGroups.forEach(function(subtask) {
+                addSubtaskItemToContainer(groupContainer, subtask.text);
+            });
+        } else {
+            // New format - subtask groups
+            subtaskGroups.forEach(function(groupData) {
+                var group = createSubtaskGroupElement(groupData.name);
+                container.appendChild(group);
+                var groupContainer = group.querySelector('.subtasks-container');
+                if (groupData.items) {
+                    groupData.items.forEach(function(item) {
+                        addSubtaskItemToContainer(groupContainer, item.text);
+                    });
+                }
+            });
         }
+    } else {
+        // Create default empty group
+        var defaultGroup = createSubtaskGroupElement('Tasks');
+        container.appendChild(defaultGroup);
     }
+}
+
+function createSubtaskGroupElement(name) {
+    var group = document.createElement('div');
+    group.className = 'subtask-group';
+    group.setAttribute('data-group', 'group-' + Date.now());
+    
+    group.innerHTML = 
+        '<div class="subtask-group-header">' +
+            '<input type="text" class="subtask-group-name" placeholder="Group name (e.g., \'Research\', \'Steps\')" value="' + (name || 'Tasks') + '">' +
+            '<button type="button" class="btn-remove-group" onclick="removeSubtaskGroup(this)" title="Remove Group">' +
+                '<i class="fas fa-trash"></i>' +
+            '</button>' +
+        '</div>' +
+        '<div class="subtasks-container"></div>' +
+        '<button type="button" class="btn-add-subtask" onclick="addSubtaskToGroup(this)">' +
+            '<i class="fas fa-plus"></i> Add Item' +
+        '</button>';
+    
+    return group;
+}
+
+function addSubtaskItemToContainer(container, text) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'subtask-input-wrapper';
+    
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Enter item...';
+    input.className = 'subtask-input';
+    if (text) input.value = text;
+    
+    var removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn-remove-subtask';
+    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    removeBtn.onclick = function() {
+        playSound('click');
+        wrapper.remove();
+    };
+    
+    wrapper.appendChild(input);
+    wrapper.appendChild(removeBtn);
+    container.appendChild(wrapper);
 }
 
 // Handle form submission
@@ -2210,6 +2982,40 @@ function renderAllTasks() {
     for (var i = 0; i < days.length; i++) {
         renderTasks(days[i]);
     }
+    updateHeaderStats();
+    highlightToday();
+}
+
+// Update header stats pills
+function updateHeaderStats() {
+    var totalTasksStat = document.getElementById('totalTasksStat');
+    var completedTasksStat = document.getElementById('completedTasksStat');
+    
+    if (!totalTasksStat && !completedTasksStat) return;
+    
+    var stats = calculateWeekStats();
+    
+    if (totalTasksStat) {
+        totalTasksStat.textContent = stats.totalTasks;
+    }
+    
+    if (completedTasksStat) {
+        completedTasksStat.textContent = stats.completedTasks;
+    }
+}
+
+// Highlight today's card
+function highlightToday() {
+    var days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    var today = days[new Date().getDay()];
+    
+    var allCards = document.querySelectorAll('.day-card-modern');
+    allCards.forEach(function(card) {
+        card.classList.remove('today');
+        if (card.getAttribute('data-day') === today) {
+            card.classList.add('today');
+        }
+    });
 }
 
 // Render tasks for a specific day
@@ -2230,7 +3036,7 @@ function renderTasks(day) {
     }
     
     if (countElement) {
-        countElement.textContent = dayTasks.length + ' task' + (dayTasks.length !== 1 ? 's' : '') + ' • ' + completedCount + ' completed';
+        countElement.textContent = dayTasks.length;
     }
     
     // Render tasks with overflow handling
@@ -2344,21 +3150,48 @@ function createTaskElement(task, day) {
     var descHTML = task.description ? linkifyText(task.description) : '';
     var notesHTML = task.notes ? linkifyText(task.notes) : '';
     
-    // Build subtasks HTML
+    // Build subtasks HTML with group support
     var subtasksHTML = '';
     if (task.subtasks && task.subtasks.length > 0) {
-        subtasksHTML = '<div class="task-subtasks">';
-        for (var i = 0; i < task.subtasks.length; i++) {
-            var subtask = task.subtasks[i];
-            subtasksHTML += 
-                '<div class="subtask-item' + (subtask.completed ? ' completed' : '') + '">' +
-                    '<input type="checkbox" class="subtask-checkbox" ' + 
-                    (subtask.completed ? 'checked' : '') + 
-                    ' onchange="toggleSubtaskComplete(\'' + day + '\', ' + task.id + ', ' + subtask.id + ')">' +
-                    '<span class="subtask-text">' + linkifyText(subtask.text) + '</span>' +
-                '</div>';
+        // Check if it's new grouped format or old format
+        if (task.subtasks[0].name !== undefined && task.subtasks[0].items !== undefined) {
+            // New grouped format
+            subtasksHTML = '<div class="task-subtask-groups">';
+            for (var g = 0; g < task.subtasks.length; g++) {
+                var group = task.subtasks[g];
+                subtasksHTML += '<div class="task-subtask-group">';
+                subtasksHTML += '<div class="task-subtask-group-name"><i class="fas fa-folder"></i> ' + group.name + '</div>';
+                subtasksHTML += '<div class="subtask-list">';
+                if (group.items && group.items.length > 0) {
+                    for (var i = 0; i < group.items.length; i++) {
+                        var subtask = group.items[i];
+                        subtasksHTML += 
+                            '<div class="subtask-item' + (subtask.completed ? ' completed' : '') + '">' +
+                                '<input type="checkbox" class="subtask-checkbox" ' + 
+                                (subtask.completed ? 'checked' : '') + 
+                                ' onchange="toggleSubtaskComplete(\'' + day + '\', ' + task.id + ', ' + subtask.id + ', ' + g + ')">' +
+                                '<span class="subtask-text">' + linkifyText(subtask.text) + '</span>' +
+                            '</div>';
+                    }
+                }
+                subtasksHTML += '</div></div>';
+            }
+            subtasksHTML += '</div>';
+        } else {
+            // Old flat format
+            subtasksHTML = '<div class="task-subtasks">';
+            for (var i = 0; i < task.subtasks.length; i++) {
+                var subtask = task.subtasks[i];
+                subtasksHTML += 
+                    '<div class="subtask-item' + (subtask.completed ? ' completed' : '') + '">' +
+                        '<input type="checkbox" class="subtask-checkbox" ' + 
+                        (subtask.completed ? 'checked' : '') + 
+                        ' onchange="toggleSubtaskComplete(\'' + day + '\', ' + task.id + ', ' + subtask.id + ')">' +
+                        '<span class="subtask-text">' + linkifyText(subtask.text) + '</span>' +
+                    '</div>';
+            }
+            subtasksHTML += '</div>';
         }
-        subtasksHTML += '</div>';
     }
     
     taskDiv.innerHTML = 
@@ -2389,41 +3222,81 @@ function toggleTaskComplete(day, taskId) {
             var wasCompleted = tasks[day][i].completed;
             tasks[day][i].completed = !tasks[day][i].completed;
             
-            // Show appreciation when task is completed
+            // Show appreciation and award coins when task is completed
             if (!wasCompleted && tasks[day][i].completed) {
+                // Award coins for completing task
+                addCoins(COINS_PER_TASK, 'Completed task: ' + tasks[day][i].title);
+                
                 var profile = JSON.parse(localStorage.getItem('userProfile') || '{}');
                 var name = profile.name && profile.name.trim() !== '' ? profile.name : '';
                 var messages = [
-                    'Great job' + (name ? ', ' + name : '') + '! Task completed! <i class="fas fa-party-horn"></i>',
-                    'Awesome work' + (name ? ', ' + name : '') + '! Keep it up! <i class="fas fa-dumbbell"></i>',
-                    'Well done' + (name ? ', ' + name : '') + '! You\'re crushing it! <i class="fas fa-star"></i>',
-                    'Fantastic' + (name ? ', ' + name : '') + '! Another one done! <i class="fas fa-sparkles"></i>',
-                    'Excellent' + (name ? ', ' + name : '') + '! You\'re on fire! <i class="fas fa-fire"></i>'
+                    'Great job' + (name ? ', ' + name : '') + '! +' + COINS_PER_TASK + ' coins! <i class="fas fa-coins"></i>',
+                    'Awesome work' + (name ? ', ' + name : '') + '! +' + COINS_PER_TASK + ' coins! <i class="fas fa-coins"></i>',
+                    'Well done' + (name ? ', ' + name : '') + '! +' + COINS_PER_TASK + ' coins! <i class="fas fa-coins"></i>',
+                    'Fantastic' + (name ? ', ' + name : '') + '! +' + COINS_PER_TASK + ' coins! <i class="fas fa-coins"></i>',
+                    'Excellent' + (name ? ', ' + name : '') + '! +' + COINS_PER_TASK + ' coins! <i class="fas fa-coins"></i>'
                 ];
                 var randomMessage = messages[Math.floor(Math.random() * messages.length)];
                 showNotification(randomMessage, 'success');
+            } else if (wasCompleted && !tasks[day][i].completed) {
+                // Remove coins if uncompleting task
+                removeCoins(COINS_PER_TASK);
             }
             
             saveTasksToStorage();
             renderTasks(day);
+            updateHeaderStats();
             break;
         }
     }
 }
 
-// Toggle subtask completion
-function toggleSubtaskComplete(day, taskId, subtaskId) {
+// Toggle subtask completion (supports both old and new formats)
+function toggleSubtaskComplete(day, taskId, subtaskId, groupIndex) {
     playSound('click');
     for (var i = 0; i < tasks[day].length; i++) {
         if (tasks[day][i].id === taskId) {
             var task = tasks[day][i];
             if (task.subtasks) {
-                for (var j = 0; j < task.subtasks.length; j++) {
-                    if (task.subtasks[j].id === subtaskId) {
-                        task.subtasks[j].completed = !task.subtasks[j].completed;
-                        saveTasksToStorage();
-                        renderTasks(day);
-                        return;
+                // Check if it's grouped format
+                if (groupIndex !== undefined && task.subtasks[groupIndex] && task.subtasks[groupIndex].items) {
+                    // New grouped format
+                    var items = task.subtasks[groupIndex].items;
+                    for (var j = 0; j < items.length; j++) {
+                        if (items[j].id === subtaskId) {
+                            var wasCompleted = items[j].completed;
+                            items[j].completed = !items[j].completed;
+                            
+                            // Award/remove coins for subtask
+                            if (!wasCompleted && items[j].completed) {
+                                addCoins(COINS_PER_SUBTASK, 'Completed subtask: ' + items[j].text);
+                            } else if (wasCompleted && !items[j].completed) {
+                                removeCoins(COINS_PER_SUBTASK);
+                            }
+                            
+                            saveTasksToStorage();
+                            renderTasks(day);
+                            return;
+                        }
+                    }
+                } else {
+                    // Old flat format
+                    for (var j = 0; j < task.subtasks.length; j++) {
+                        if (task.subtasks[j].id === subtaskId) {
+                            var wasCompleted = task.subtasks[j].completed;
+                            task.subtasks[j].completed = !task.subtasks[j].completed;
+                            
+                            // Award/remove coins for subtask
+                            if (!wasCompleted && task.subtasks[j].completed) {
+                                addCoins(COINS_PER_SUBTASK, 'Completed subtask: ' + task.subtasks[j].text);
+                            } else if (wasCompleted && !task.subtasks[j].completed) {
+                                removeCoins(COINS_PER_SUBTASK);
+                            }
+                            
+                            saveTasksToStorage();
+                            renderTasks(day);
+                            return;
+                        }
                     }
                 }
             }

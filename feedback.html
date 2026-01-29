@@ -4,112 +4,658 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feedback - Weekly Todo</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%232c3e50;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%234a90e2;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23grad)'/%3E%3Cpath d='M25 30 L45 30 M25 45 L45 45 M25 60 L45 60' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='65' cy='30' r='8' fill='none' stroke='white' stroke-width='3'/%3E%3Cpath d='M60 30 L63 33 L70 26' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='65' cy='45' r='8' fill='none' stroke='white' stroke-width='3'/%3E%3Ccircle cx='65' cy='60' r='8' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a67d8;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --success: #10b981;
+            --bg-dark: #0f0f1a;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: var(--text-primary);
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(118, 75, 162, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 40% 60%, rgba(240, 147, 251, 0.08) 0%, transparent 40%);
+            animation: bgFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes bgFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(2%, 2%) rotate(1deg); }
+            66% { transform: translate(-1%, 1%) rotate(-1deg); }
+        }
+
+        /* Main Container */
+        .page-container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navigation */
+        .nav {
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: white;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .logo-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-back {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .nav-back:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            padding: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .feedback-wrapper {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        /* Page Header */
+        .page-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .page-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--primary);
+            margin: 0 auto 1.5rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .page-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .page-subtitle {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Feedback Card */
+        .feedback-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 24px;
+            padding: 2.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Contact Options */
+        .contact-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .contact-option {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .contact-option:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(102, 126, 234, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .contact-option-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin: 0 auto 0.75rem;
+        }
+
+        .contact-option-icon.email {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.1) 100%);
+            color: var(--primary);
+        }
+
+        .contact-option-icon.bug {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.1) 100%);
+            color: #ef4444;
+        }
+
+        .contact-option-icon.idea {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.1) 100%);
+            color: var(--success);
+        }
+
+        .contact-option h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .contact-option p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .divider-text {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Form */
+        .feedback-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group label i {
+            color: var(--primary);
+            font-size: 0.85rem;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.9rem 1.1rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(102, 126, 234, 0.08);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 140px;
+        }
+
+        .form-group select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 16px;
+            padding-right: 2.5rem;
+        }
+
+        .form-group select option {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+        }
+
+        /* Character Count */
+        .char-count {
+            text-align: right;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Form Actions */
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            padding: 0.9rem 1.75rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            flex: 1;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.35);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.45);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        /* Success State */
+        .feedback-success {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+
+        .success-icon {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.1) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: var(--success);
+            margin: 0 auto 1.5rem;
+            animation: successPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes successPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .feedback-success h3 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .feedback-success p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 2rem 3rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: var(--text-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav {
+                padding: 1rem 1.5rem;
+            }
+
+            .content {
+                padding: 2rem 1.5rem;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .feedback-card {
+                padding: 1.5rem;
+            }
+
+            .contact-options {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="backconground-gradient"></div>
-    
-    <div class="container">
-        <header class="header">
-            <div class="header-content">
-                <div class="header-left">
-                    <i class="fas fa-comment-dots header-icon"></i>
-                    <div>
-                        <h1 class="title">Feedback</h1>
-                        <p class="subtitle">We'd love to hear from you</p>
-                    </div>
+    <div class="bg-animation"></div>
+
+    <div class="page-container">
+        <nav class="nav">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-check-double"></i>
                 </div>
-                <div class="header-actions">
-                    <a href="index.html" class="header-btn" title="Back to Home">
-                        <i class="fas fa-arrow-left"></i>
-                    </a>
+                <span class="logo-text">Weekly Todo</span>
+            </a>
+            <a href="index.html" class="nav-back">
+                <i class="fas fa-arrow-left"></i>
+                Back to Home
+            </a>
+        </nav>
+
+        <div class="content">
+            <div class="feedback-wrapper">
+                <div class="page-header">
+                    <div class="page-icon">
+                        <i class="fas fa-comment-dots"></i>
+                    </div>
+                    <h1 class="page-title">Send Feedback</h1>
+                    <p class="page-subtitle">We'd love to hear from you! Share your thoughts, suggestions, or report any issues.</p>
                 </div>
-            </div>
-        </header>
 
-        <div class="feedback-container">
-            <div class="feedback-form-wrapper">
-                <div class="feedback-intro">
-                    <i class="fas fa-paper-plane feedback-icon"></i>
-                    <h2>Send Us Your Feedback</h2>
-                    <p>Your feedback helps us improve. Please share your thoughts, suggestions, or report any issues.</p>
-                </div>
-                
-                <form class="feedback-form" id="feedbackForm" action="https://docs.google.com/forms/u/0/d/e/1FAIpQLSf5cRRe4s8-fl29kOZmjCKEsjIpdgSC6CrtmF6bxlNlQScvBg/formResponse" method="POST" target="hidden_iframe" onsubmit="handleFeedbackSubmit()">
-                    <div class="form-group">
-                        <label for="name">
-                            <i class="fas fa-user"></i> Name
-                        </label>
-                        <input 
-                            type="text" 
-                            id="name" 
-                            name="entry.1704051414" 
-                            placeholder="Enter your name" 
-                            required
-                        >
+                <div class="feedback-card">
+                    <div class="contact-options">
+                        <div class="contact-option">
+                            <div class="contact-option-icon email">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <h4>General Inquiry</h4>
+                            <p>Questions & support</p>
+                        </div>
+                        <div class="contact-option">
+                            <div class="contact-option-icon bug">
+                                <i class="fas fa-bug"></i>
+                            </div>
+                            <h4>Report Bug</h4>
+                            <p>Found an issue?</p>
+                        </div>
+                        <div class="contact-option">
+                            <div class="contact-option-icon idea">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <h4>Feature Request</h4>
+                            <p>Share your ideas</p>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="email">
-                            <i class="fas fa-envelope"></i> Email
-                        </label>
-                        <input 
-                            type="email" 
-                            id="email" 
-                            name="entry.1809102715" 
-                            placeholder="Enter your email" 
-                            required
-                        >
+                    <div class="divider">
+                        <div class="divider-line"></div>
+                        <span class="divider-text">Fill out the form below</span>
+                        <div class="divider-line"></div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="feedback">
-                            <i class="fas fa-comment"></i> Feedback
-                        </label>
-                        <textarea 
-                            id="feedback" 
-                            name="entry.276170309" 
-                            rows="6" 
-                            placeholder="Share your thoughts, suggestions, or report issues..." 
-                            required
-                        ></textarea>
-                    </div>
+                    <form class="feedback-form" id="feedbackForm" action="https://docs.google.com/forms/u/0/d/e/1FAIpQLSf5cRRe4s8-fl29kOZmjCKEsjIpdgSC6CrtmF6bxlNlQScvBg/formResponse" method="POST" target="hidden_iframe" onsubmit="handleFeedbackSubmit()">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="name">
+                                    <i class="fas fa-user"></i> Name
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="name" 
+                                    name="entry.1704051414" 
+                                    placeholder="Enter your name" 
+                                    required
+                                >
+                            </div>
 
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i> Submit Feedback
-                        </button>
-                        <a href="index.html" class="btn btn-secondary">
-                            <i class="fas fa-times"></i> Cancel
+                            <div class="form-group">
+                                <label for="email">
+                                    <i class="fas fa-envelope"></i> Email
+                                </label>
+                                <input 
+                                    type="email" 
+                                    id="email" 
+                                    name="entry.1809102715" 
+                                    placeholder="Enter your email" 
+                                    required
+                                >
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="category">
+                                <i class="fas fa-tag"></i> Category
+                            </label>
+                            <select id="category" name="entry.category">
+                                <option value="general">General Feedback</option>
+                                <option value="bug">Bug Report</option>
+                                <option value="feature">Feature Request</option>
+                                <option value="question">Question</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="feedback">
+                                <i class="fas fa-comment-alt"></i> Your Message
+                            </label>
+                            <textarea 
+                                id="feedback" 
+                                name="entry.276170309" 
+                                rows="5" 
+                                placeholder="Share your thoughts, describe the bug, or tell us about your feature idea..." 
+                                required
+                                maxlength="2000"
+                                oninput="updateCharCount()"
+                            ></textarea>
+                            <div class="char-count"><span id="charCount">0</span> / 2000</div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Send Feedback
+                            </button>
+                            <a href="index.html" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+
+                    <div class="feedback-success" id="feedbackSuccess" style="display: none;">
+                        <div class="success-icon">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <h3>Thank You!</h3>
+                        <p>Your feedback has been received successfully.<br>We appreciate you taking the time to help us improve!</p>
+                        <a href="index.html" class="btn btn-primary">
+                            <i class="fas fa-home"></i> Back to Home
                         </a>
                     </div>
-                </form>
-
-                <div class="feedback-success" id="feedbackSuccess" style="display: none;">
-                    <i class="fas fa-check-circle"></i>
-                    <h3>Thank You!</h3>
-                    <p>Your feedback has been received. We appreciate your input!</p>
-                    <a href="index.html" class="btn btn-primary">
-                        <i class="fas fa-home"></i> Back to Home
-                    </a>
                 </div>
             </div>
         </div>
-    </div>
 
-    <footer class="footer">
-        <div class="footer-content">
+        <footer class="footer">
+            <div class="footer-links">
+                <a href="tos.html" class="footer-link">Terms of Service</a>
+                <a href="privacy.html" class="footer-link">Privacy Policy</a>
+                <a href="index.html" class="footer-link">Home</a>
+            </div>
             <p>&copy; 2026 Weekly Todo. All rights reserved.</p>
-            <a href="index.html" class="feedback-link">
-                <i class="fas fa-home"></i> Home
-            </a>
-        </div>
-    </footer>
+        </footer>
+    </div>
 
     <!-- Hidden iframe to handle form submission without redirect -->
     <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="if(submitted) { showSuccessMessage(); }"></iframe>
@@ -117,33 +663,41 @@
     <script>
         let submitted = false;
 
+        function updateCharCount() {
+            const textarea = document.getElementById('feedback');
+            const charCount = document.getElementById('charCount');
+            charCount.textContent = textarea.value.length;
+        }
+
         function handleFeedbackSubmit() {
-            const form = document.getElementById('feedbackForm');
-            const successMessage = document.getElementById('feedbackSuccess');
-            
-            // Set submitted flag
             submitted = true;
             
-            // Hide form and show success message after a short delay
             setTimeout(() => {
+                const form = document.getElementById('feedbackForm');
+                const successMessage = document.getElementById('feedbackSuccess');
+                const contactOptions = document.querySelector('.contact-options');
+                const divider = document.querySelector('.divider');
+                
                 form.style.display = 'none';
-                document.querySelector('.feedback-intro').style.display = 'none';
+                contactOptions.style.display = 'none';
+                divider.style.display = 'none';
                 successMessage.style.display = 'block';
             }, 500);
             
-            return true; // Allow form to submit
+            return true;
         }
 
         function showSuccessMessage() {
             const form = document.getElementById('feedbackForm');
             const successMessage = document.getElementById('feedbackSuccess');
+            const contactOptions = document.querySelector('.contact-options');
+            const divider = document.querySelector('.divider');
             
-            // Show success message
             form.style.display = 'none';
-            document.querySelector('.feedback-intro').style.display = 'none';
+            contactOptions.style.display = 'none';
+            divider.style.display = 'none';
             successMessage.style.display = 'block';
             
-            // Reset the submitted flag
             submitted = false;
         }
     </script>

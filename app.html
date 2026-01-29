@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Todo - Be Unique</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%232c3e50;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%234a90e2;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23grad)'/%3E%3Cpath d='M25 30 L45 30 M25 45 L45 45 M25 60 L45 60' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='65' cy='30' r='8' fill='none' stroke='white' stroke-width='3'/%3E%3Cpath d='M60 30 L63 33 L70 26' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='65' cy='45' r='8' fill='none' stroke='white' stroke-width='3'/%3E%3Ccircle cx='65' cy='60' r='8' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="background-gradient"></div>
+    
+    <div class="container">
+        <!-- Modern Header -->
+        <header class="header-modern">
+            <div class="header-brand">
+                <div class="brand-icon">
+                    <i class="fas fa-check-double"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>Weekly Todo</h1>
+                    <span class="brand-tagline">Plan your week, achieve your goals</span>
+                </div>
+            </div>
+            <div class="header-stats">
+                <div class="stat-pill coins" onclick="showCoinsHistory()" title="Weekly Coins">
+                    <i class="fas fa-coins"></i>
+                    <span id="weeklyCoins">0</span>
+                </div>
+                <div class="stat-pill total">
+                    <i class="fas fa-tasks"></i>
+                    <span id="totalTasksStat">0</span> tasks
+                </div>
+                <div class="stat-pill done">
+                    <i class="fas fa-check-circle"></i>
+                    <span id="completedTasksStat">0</span> done
+                </div>
+            </div>
+            <div class="header-actions-modern">
+                <button class="action-icon-btn" onclick="toggleTheme()" title="Toggle Theme">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
+                <button class="action-icon-btn feature-locked" onclick="tryFocusMode()" title="Focus Mode (25 coins)">
+                    <i class="fas fa-bullseye" id="focusIcon"></i>
+                    <span class="lock-indicator"><i class="fas fa-lock"></i></span>
+                </button>
+                <a href="#" class="action-icon-btn feature-locked" onclick="tryCalendar(event)" title="Calendar (15 coins)">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span class="lock-indicator"><i class="fas fa-lock"></i></span>
+                </a>
+                <a href="#" class="action-icon-btn agent-btn feature-locked" onclick="tryAgent(event)" title="Weekly Agent (50 coins)">
+                    <i class="fas fa-robot"></i>
+                    <span class="lock-indicator"><i class="fas fa-lock"></i></span>
+                </a>
+                <button class="profile-avatar" id="profileAvatarDisplay" onclick="openProfileModal()" title="Profile">G</button>
+            </div>
+        </header>
+
+        <!-- Hidden file input for import -->
+        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleFileImport(event)">
+
+        <!-- Quick Filter Pills -->
+        <div class="quick-filters">
+            <button class="filter-pill active" onclick="filterByStatus('all')" data-filter="all">
+                <i class="fas fa-layer-group"></i> All
+            </button>
+            <button class="filter-pill" onclick="filterByStatus('active')" data-filter="active">
+                <i class="fas fa-clock"></i> Active
+            </button>
+            <button class="filter-pill" onclick="filterByStatus('completed')" data-filter="completed">
+                <i class="fas fa-check"></i> Done
+            </button>
+            <button class="filter-pill priority" onclick="filterByPriority('high')" data-filter="high">
+                <i class="fas fa-fire"></i> Urgent
+            </button>
+            <button class="filter-pill inbox" onclick="showInboxView()" data-filter="inbox">
+                <i class="fas fa-inbox"></i> Inbox
+            </button>
+        </div>
+
+        <!-- Week Grid - New Layout -->
+        <div class="week-grid-modern">
+            <!-- Monday -->
+            <div class="day-card-modern" data-day="monday">
+                <div class="day-card-header">
+                    <span class="day-label">Mon</span>
+                    <span class="day-count" id="monday-count">0</span>
+                </div>
+                <div class="tasks-container" id="monday-tasks"></div>
+                <button class="add-task-floating" onclick="openTaskModal('monday')">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+
+            <!-- Tuesday -->
+            <div class="day-card-modern" data-day="tuesday">
+                <div class="day-card-header">
+                    <span class="day-label">Tue</span>
+                    <span class="day-count" id="tuesday-count">0</span>
+                </div>
+                <div class="tasks-container" id="tuesday-tasks"></div>
+                <button class="add-task-floating" onclick="openTaskModal('tuesday')">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+
+            <!-- Wednesday -->
+            <div class="day-card-modern" data-day="wednesday">
+                <div class="day-card-header">
+                    <span class="day-label">Wed</span>
+                    <span class="day-count" id="wednesday-count">0</span>
+                </div>
+                <div class="tasks-container" id="wednesday-tasks"></div>
+                <button class="add-task-floating" onclick="openTaskModal('wednesday')">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+
+            <!-- Thursday -->
+            <div class="day-card-modern" data-day="thursday">
+                <div class="day-card-header">
+                    <span class="day-label">Thu</span>
+                    <span class="day-count" id="thursday-count">0</span>
+                </div>
+                <div class="tasks-container" id="thursday-tasks"></div>
+                <button class="add-task-floating" onclick="openTaskModal('thursday')">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+
+            <!-- Friday -->
+            <div class="day-card-modern" data-day="friday">
+                <div class="day-card-header">
+                    <span class="day-label">Fri</span>
+                    <span class="day-count" id="friday-count">0</span>
+                </div>
+                <div class="tasks-container" id="friday-tasks"></div>
+                <button class="add-task-floating" onclick="openTaskModal('friday')">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+
+            <!-- Saturday -->
+            <div class="day-card-modern weekend" data-day="saturday">
+                <div class="day-card-header">
+                    <span class="day-label">Sat</span>
+                    <span class="day-count" id="saturday-count">0</span>
+                </div>
+                <div class="tasks-container" id="saturday-tasks"></div>
+                <button class="add-task-floating" onclick="openTaskModal('saturday')">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+
+            <!-- Sunday -->
+            <div class="day-card-modern weekend" data-day="sunday">
+                <div class="day-card-header">
+                    <span class="day-label">Sun</span>
+                    <span class="day-count" id="sunday-count">0</span>
+                </div>
+                <div class="tasks-container" id="sunday-tasks"></div>
+                <button class="add-task-floating" onclick="openTaskModal('sunday')">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div class="modal-overlay" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">
+                    <i class="fas fa-plus-circle"></i> Add New Task
+                </h3>
+                <button class="close-btn" onclick="closeTaskModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="task-form" id="taskForm">
+                <div class="form-row">
+                    <div class="form-group flex-1">
+                        <label for="taskTitle">
+                            <i class="fas fa-heading"></i> Task Title
+                        </label>
+                        <input type="text" id="taskTitle" placeholder="Enter task title..." required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskPriority">
+                            <i class="fas fa-flag"></i> Priority
+                        </label>
+                        <select id="taskPriority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taskCategory">
+                            <i class="fas fa-tag"></i> Category
+                        </label>
+                        <select id="taskCategory">
+                            <option value="work">Work</option>
+                            <option value="personal">Personal</option>
+                            <option value="health">Health</option>
+                            <option value="study">Study</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taskPeriod">
+                            <i class="fas fa-sun"></i> Time Period
+                        </label>
+                        <select id="taskPeriod">
+                            <option value="">Not specified</option>
+                            <option value="early-morning">Early Morning </option>
+                            <option value="morning">Morning </option>
+                            <option value="afternoon">Afternoon </option>
+                            <option value="evening">Evening </option>
+                            <option value="night">Night </option>
+                            <option value="late-night">Late Night </option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskTime">
+                            <i class="fas fa-clock"></i> Time
+                        </label>
+                        <input type="time" id="taskTime">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taskDueDate">
+                            <i class="fas fa-calendar-alt"></i> Due Date
+                        </label>
+                        <input type="date" id="taskDueDate">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="taskDescription">
+                        <i class="fas fa-align-left"></i> Description
+                    </label>
+                    <textarea id="taskDescription" rows="3" placeholder="Add details about your task..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="taskNotes">
+                        <i class="fas fa-sticky-note"></i> Side Notes
+                    </label>
+                    <textarea id="taskNotes" rows="2" placeholder="Additional notes or reminders..."></textarea>
+                </div>
+
+                <div class="form-group subtasks-section">
+                    <label>
+                        <i class="fas fa-list-ul"></i> Subtasks
+                    </label>
+                    <div class="subtask-groups-container" id="subtaskGroupsContainer">
+                        <!-- Default group -->
+                        <div class="subtask-group" data-group="default">
+                            <div class="subtask-group-header">
+                                <input type="text" class="subtask-group-name" placeholder="Group name (e.g., 'Research', 'Steps')" value="Tasks">
+                                <button type="button" class="btn-remove-group" onclick="removeSubtaskGroup(this)" title="Remove Group">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <div class="subtasks-container"></div>
+                            <button type="button" class="btn-add-subtask" onclick="addSubtaskToGroup(this)">
+                                <i class="fas fa-plus"></i> Add Item
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-add-group" onclick="addSubtaskGroup()">
+                        <i class="fas fa-folder-plus"></i> Add New Group
+                    </button>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-check"></i> Add Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Notification -->
+    <div class="custom-notification" id="customNotification">
+        <div class="notification-content">
+            <i class="notification-icon"></i>
+            <span class="notification-message"></span>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Dialog -->
+    <div class="confirm-overlay" id="confirmDialog">
+        <div class="confirm-content">
+            <div class="confirm-header">
+                <i class="fas fa-exclamation-circle"></i>
+                <h3 class="confirm-title">Confirm Action</h3>
+            </div>
+            <p class="confirm-message">Are you sure?</p>
+            <div class="confirm-actions">
+                <button class="btn btn-secondary" onclick="closeConfirm(false)">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-danger" onclick="closeConfirm(true)">
+                    <i class="fas fa-check"></i> Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="modal-overlay" id="profileModal">
+        <div class="modal-content profile-modal-content">
+            <div class="modal-header">
+                <div class="modal-title-wrapper">
+                    <i class="fas fa-user-circle"></i>
+                    <h3>Profile Settings</h3>
+                </div>
+                <button class="close-btn" onclick="closeProfileModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="profileForm" class="profile-form">
+                    <div class="form-group">
+                        <label for="profileName">
+                            <i class="fas fa-user"></i> Name
+                        </label>
+                        <input 
+                            type="text" 
+                            id="profileName" 
+                            placeholder="Enter your name"
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="profileEmail">
+                            <i class="fas fa-envelope"></i> Email
+                        </label>
+                        <input 
+                            type="email" 
+                            id="profileEmail" 
+                            placeholder="Enter your email"
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="profileAge">
+                            <i class="fas fa-birthday-cake"></i> Age
+                        </label>
+                        <input 
+                            type="number" 
+                            id="profileAge" 
+                            placeholder="Enter your age"
+                            min="13"
+                            max="120"
+                        >
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="saveProfile()">
+                        <i class="fas fa-save"></i> Save Profile
+                    </button>
+                </form>
+
+                <div class="profile-divider"></div>
+
+                <div class="profile-actions">
+                    <h4><i class="fas fa-cog"></i> Settings & Actions</h4>
+                    
+                    <div class="profile-action-buttons">
+                        <button class="profile-action-btn theme-toggle-btn" onclick="toggleTheme()">
+                            <i class="fas fa-moon" id="themeIconProfile"></i>
+                            <span id="themeText">Dark Mode</span>
+                        </button>
+                        <a href="reports.html" class="profile-action-btn reports-btn">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Weekly Reports</span>
+                        </a>
+                        <button class="profile-action-btn" onclick="importTasks()">
+                            <i class="fas fa-upload"></i>
+                            <span>Import Tasks</span>
+                        </button>
+                        <button class="profile-action-btn" onclick="exportTasks()">
+                            <i class="fas fa-download"></i>
+                            <span>Export Tasks</span>
+                        </button>
+                        <a href="feedback.html" class="profile-action-btn">
+                            <i class="fas fa-comment-dots"></i>
+                            <span>Send Feedback</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Premium Focus Mode Overlay -->
+    <div class="focus-mode-overlay" id="focusModeOverlay">
+        <div class="focus-mode-container">
+            <!-- Focus Header -->
+            <div class="focus-header">
+                <div class="focus-header-left">
+                    <div class="focus-icon-wrapper">
+                        <i class="fas fa-bullseye"></i>
+                        <div class="focus-pulse"></div>
+                    </div>
+                    <div class="focus-title-group">
+                        <h1 class="focus-title">Focus Mode</h1>
+                        <p class="focus-subtitle" id="focusDayName">Today's Tasks</p>
+                    </div>
+                </div>
+                <div class="focus-header-right">
+                    <div class="focus-stats">
+                        <div class="focus-stat">
+                            <span class="focus-stat-number" id="focusTotalTasks">0</span>
+                            <span class="focus-stat-label">Tasks</span>
+                        </div>
+                        <div class="focus-stat completed">
+                            <span class="focus-stat-number" id="focusCompletedTasks">0</span>
+                            <span class="focus-stat-label">Done</span>
+                        </div>
+                        <div class="focus-stat progress">
+                            <span class="focus-stat-number" id="focusProgressPercent">0%</span>
+                            <span class="focus-stat-label">Progress</span>
+                        </div>
+                    </div>
+                    <button class="focus-close-btn" onclick="toggleFocusMode()" title="Exit Focus Mode">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Focus Progress Bar -->
+            <div class="focus-progress-container">
+                <div class="focus-progress-bar" id="focusProgressBar"></div>
+                <div class="focus-progress-glow"></div>
+            </div>
+
+            <!-- Focus Time Display -->
+            <div class="focus-time-section">
+                <div class="focus-clock" id="focusClock">00:00:00</div>
+                <div class="focus-date" id="focusDate">Wednesday, January 29, 2026</div>
+            </div>
+
+            <!-- Focus Tasks Container -->
+            <div class="focus-tasks-wrapper">
+                <div class="focus-tasks-header">
+                    <h2><i class="fas fa-list-check"></i> Your Tasks</h2>
+                    <button class="focus-add-btn" onclick="openTaskModalFromFocus()">
+                        <i class="fas fa-plus"></i> Add Task
+                    </button>
+                </div>
+                <div class="focus-tasks-list" id="focusTasksList">
+                    <!-- Tasks will be rendered here -->
+                </div>
+                <div class="focus-empty-state" id="focusEmptyState">
+                    <div class="focus-empty-icon">
+                        <i class="fas fa-check-double"></i>
+                    </div>
+                    <h3>All caught up!</h3>
+                    <p>No tasks for today. Enjoy your free time or add a new task.</p>
+                    <button class="focus-add-btn large" onclick="openTaskModalFromFocus()">
+                        <i class="fas fa-plus"></i> Add Your First Task
+                    </button>
+                </div>
+            </div>
+
+            <!-- Focus Quote -->
+            <div class="focus-quote-section">
+                <i class="fas fa-quote-left"></i>
+                <p class="focus-quote" id="focusQuote">The secret of getting ahead is getting started.</p>
+                <span class="focus-quote-author" id="focusQuoteAuthor">— Mark Twain</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer-simple">
+        <p>&copy; 2026 Weekly Todo. All rights reserved.</p>
+        <nav class="footer-nav">
+            <a href="tos.html">Terms</a>
+            <span class="separator">•</span>
+            <a href="privacy.html">Privacy</a>
+            <span class="separator">•</span>
+            <a href="patchnotes.html">Patch Notes</a>
+        </nav>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

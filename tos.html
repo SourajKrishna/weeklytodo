@@ -4,128 +4,508 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terms of Service - Weekly Todo</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%232c3e50;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%234a90e2;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23grad)'/%3E%3Cpath d='M25 30 L45 30 M25 45 L45 45 M25 60 L45 60' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='65' cy='30' r='8' fill='none' stroke='white' stroke-width='3'/%3E%3Cpath d='M60 30 L63 33 L70 26' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='65' cy='45' r='8' fill='none' stroke='white' stroke-width='3'/%3E%3Ccircle cx='65' cy='60' r='8' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a67d8;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --bg-dark: #0f0f1a;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: var(--text-primary);
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(118, 75, 162, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 40% 60%, rgba(240, 147, 251, 0.08) 0%, transparent 40%);
+            animation: bgFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes bgFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(2%, 2%) rotate(1deg); }
+            66% { transform: translate(-1%, 1%) rotate(-1deg); }
+        }
+
+        /* Main Container */
+        .page-container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navigation */
+        .nav {
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: white;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .logo-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-back {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .nav-back:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            padding: 3rem;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Page Header */
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .page-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--primary);
+            margin: 0 auto 1.5rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .page-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .page-subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .effective-date {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 50px;
+            font-size: 0.85rem;
+            color: var(--primary);
+        }
+
+        /* Content Card */
+        .content-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 2.5rem;
+        }
+
+        .intro-text {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .intro-text strong {
+            color: var(--text-primary);
+        }
+
+        /* Sections */
+        .section {
+            margin-bottom: 2rem;
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.08) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: var(--primary);
+        }
+
+        .section-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+
+        .section-content {
+            padding-left: 3rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .section-content p {
+            margin-bottom: 0.75rem;
+        }
+
+        .section-content ul {
+            margin: 0.75rem 0;
+            padding-left: 1.5rem;
+        }
+
+        .section-content li {
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+
+        .section-content li::marker {
+            color: var(--primary);
+        }
+
+        /* Contact Box */
+        .contact-box {
+            margin-top: 1rem;
+            padding: 1.25rem;
+            background: rgba(102, 126, 234, 0.08);
+            border: 1px solid rgba(102, 126, 234, 0.15);
+            border-radius: 12px;
+        }
+
+        .contact-box a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .contact-box a:hover {
+            text-decoration: underline;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 2rem 3rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: var(--text-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav {
+                padding: 1rem 1.5rem;
+            }
+
+            .content {
+                padding: 2rem 1.5rem;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .content-card {
+                padding: 1.5rem;
+            }
+
+            .section-content {
+                padding-left: 0;
+                margin-top: 0.75rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="background-gradient"></div>
-    
-    <div class="container">
-        <header class="header">
-            <div class="header-content">
-                <div class="header-left">
-                    <i class="fas fa-file-contract header-icon"></i>
-                    <div>
-                        <h1 class="title">Terms of Service</h1>
-                        <p class="subtitle">Please read carefully</p>
+    <div class="bg-animation"></div>
+
+    <div class="page-container">
+        <nav class="nav">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-check-double"></i>
+                </div>
+                <span class="logo-text">Weekly Todo</span>
+            </a>
+            <a href="index.html" class="nav-back">
+                <i class="fas fa-arrow-left"></i>
+                Back to Home
+            </a>
+        </nav>
+
+        <div class="content">
+            <div class="page-header">
+                <div class="page-icon">
+                    <i class="fas fa-file-contract"></i>
+                </div>
+                <h1 class="page-title">Terms of Service</h1>
+                <p class="page-subtitle">Please read carefully before using our service</p>
+                <span class="effective-date">
+                    <i class="fas fa-calendar-alt"></i> Effective: January 21, 2026
+                </span>
+            </div>
+
+            <div class="content-card">
+                <p class="intro-text">
+                    Welcome to <strong>weekly.souraj.me</strong> ("Site", "we", "us", "our"). These Terms of Service ("Terms") govern your use of the Site. By accessing or using the Site, you agree to be bound by these Terms.
+                </p>
+
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h3 class="section-title">1. Acceptance of Terms</h3>
+                    </div>
+                    <div class="section-content">
+                        <p>You must be at least 13 years old to use this Site. By using the Site, you represent that you meet this age requirement.</p>
                     </div>
                 </div>
-                <div class="header-actions">
-                    <a href="index.html" class="header-btn" title="Back to Home">
-                        <i class="fas fa-arrow-left"></i>
-                    </a>
-                </div>
-            </div>
-        </header>
 
-        <div class="legal-container">
-            <div class="legal-content">
-                <div class="legal-header">
-                    <i class="fas fa-scroll"></i>
-                    <h2>Terms of Service (TOS)</h2>
-                    <p class="effective-date">Effective Date: January 21, 2026</p>
-                </div>
-
-                <div class="legal-text">
-                    <p>Welcome to <strong>weekly.souraj.me</strong> ("Site", "we", "us", "our"). These Terms of Service ("Terms") govern your use of the Site. By accessing or using the Site, you agree to be bound by these Terms.</p>
-
-                    <section class="legal-section">
-                        <h3><i class="fas fa-check-circle"></i> 1. Acceptance of Terms</h3>
-                        <p>You must be at least 13 years old to use this Site. By using the Site, you represent that you meet this age requirement.</p>
-                    </section>
-
-                    <section class="legal-section">
-                        <h3><i class="fas fa-cog"></i> 2. Description of Service</h3>
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <h3 class="section-title">2. Description of Service</h3>
+                    </div>
+                    <div class="section-content">
                         <p>Weekly.souraj.me provides a weekly task planner that helps users organize to-do items and priorities ("Service"). The Service may be updated or changed at any time without notice.</p>
-                    </section>
+                    </div>
+                </div>
 
-                    <section class="legal-section">
-                        <h3><i class="fas fa-user-check"></i> 3. Use of the Service</h3>
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <h3 class="section-title">3. Use of the Service</h3>
+                    </div>
+                    <div class="section-content">
                         <p>You agree to use the Site only for lawful purposes and in accordance with these Terms.</p>
-                    </section>
+                    </div>
+                </div>
 
-                    <section class="legal-section">
-                        <h3><i class="fas fa-database"></i> 4. Data and Content</h3>
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <h3 class="section-title">4. Data and Content</h3>
+                    </div>
+                    <div class="section-content">
                         <ul>
                             <li>You are responsible for the content you add (tasks, labels, notes).</li>
                             <li>We do not claim ownership of your content.</li>
                             <li>The Site does not create accounts; task data may be stored locally (in browser storage) or as configured by the developer.</li>
                             <li>We are not responsible for any loss of content if local storage is cleared.</li>
                         </ul>
-                    </section>
+                    </div>
+                </div>
 
-                    <section class="legal-section">
-                        <h3><i class="fas fa-sync-alt"></i> 5. Changes to the Service</h3>
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-sync-alt"></i>
+                        </div>
+                        <h3 class="section-title">5. Changes to the Service</h3>
+                    </div>
+                    <div class="section-content">
                         <p>We may modify or discontinue the Site (or part of it) without notice at any time.</p>
-                    </section>
+                    </div>
+                </div>
 
-                    <section class="legal-section">
-                        <h3><i class="fas fa-copyright"></i> 6. Intellectual Property</h3>
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-copyright"></i>
+                        </div>
+                        <h3 class="section-title">6. Intellectual Property</h3>
+                    </div>
+                    <div class="section-content">
                         <p>All rights, titles and interests in the Site and all related intellectual property rights remain with the Site owner.</p>
-                    </section>
+                    </div>
+                </div>
 
-                    <section class="legal-section">
-                        <h3><i class="fas fa-exclamation-triangle"></i> 7. Disclaimers</h3>
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h3 class="section-title">7. Disclaimers</h3>
+                    </div>
+                    <div class="section-content">
                         <p>The Site is provided "as is" and "as available" without warranties of any kind. We do not guarantee uninterrupted service.</p>
-                    </section>
+                    </div>
+                </div>
 
-                    <section class="legal-section">
-                        <h3><i class="fas fa-balance-scale"></i> 8. Limitation of Liability</h3>
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-balance-scale"></i>
+                        </div>
+                        <h3 class="section-title">8. Limitation of Liability</h3>
+                    </div>
+                    <div class="section-content">
                         <p>To the maximum extent permitted by law, we are not liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Site.</p>
-                    </section>
+                    </div>
+                </div>
 
-                    <section class="legal-section">
-                        <h3><i class="fas fa-gavel"></i> 9. Governing Law</h3>
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-gavel"></i>
+                        </div>
+                        <h3 class="section-title">9. Governing Law</h3>
+                    </div>
+                    <div class="section-content">
                         <p>These Terms are governed by the laws applicable where the Site owner resides, without regard to legal conflict principles.</p>
-                    </section>
+                    </div>
+                </div>
 
-                    <section class="legal-section">
-                        <h3><i class="fas fa-envelope"></i> 10. Contact</h3>
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <h3 class="section-title">10. Contact</h3>
+                    </div>
+                    <div class="section-content">
                         <p>For questions about these Terms, contact:</p>
-                        <p class="contact-info">
+                        <div class="contact-box">
                             <i class="fas fa-at"></i> Email: <a href="mailto:contact@souraj.me">contact@souraj.me</a>
-                        </p>
-                    </section>
-                </div>
-
-                <div class="legal-footer">
-                    <a href="index.html" class="btn btn-primary">
-                        <i class="fas fa-home"></i> Back to Home
-                    </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <footer class="footer">
-        <div class="footer-content">
-            <p>&copy; 2026 Weekly Todo. All rights reserved.</p>
+        <footer class="footer">
             <div class="footer-links">
-                <a href="index.html" class="footer-link">
-                    <i class="fas fa-home"></i> Home
-                </a>
-                <a href="feedback.html" class="footer-link">
-                    <i class="fas fa-comment-dots"></i> Feedback
-                </a>
-                <a href="privacy.html" class="footer-link">
-                    <i class="fas fa-shield-alt"></i> Privacy Policy
-                </a>
+                <a href="privacy.html" class="footer-link">Privacy Policy</a>
+                <a href="feedback.html" class="footer-link">Feedback</a>
+                <a href="index.html" class="footer-link">Home</a>
             </div>
-        </div>
-    </footer>
+            <p>&copy; 2026 Weekly Todo. All rights reserved.</p>
+        </footer>
+    </div>
 </body>
 </html>

@@ -3,526 +3,715 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weekly Todo - Be Unique</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%232c3e50;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%234a90e2;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23grad)'/%3E%3Cpath d='M25 30 L45 30 M25 45 L45 45 M25 60 L45 60' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='65' cy='30' r='8' fill='none' stroke='white' stroke-width='3'/%3E%3Cpath d='M60 30 L63 33 L70 26' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='65' cy='45' r='8' fill='none' stroke='white' stroke-width='3'/%3E%3Ccircle cx='65' cy='60' r='8' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+    <title>Weekly Todo - Plan Your Week, Achieve Your Goals</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a67d8;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --bg-dark: #0f0f1a;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: var(--text-primary);
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(118, 75, 162, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 40% 60%, rgba(240, 147, 251, 0.08) 0%, transparent 40%);
+            animation: bgFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes bgFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(2%, 2%) rotate(1deg); }
+            66% { transform: translate(-1%, 1%) rotate(-1deg); }
+        }
+
+        /* Floating Particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(102, 126, 234, 0.4);
+            border-radius: 50%;
+            animation: particleFloat 15s infinite;
+        }
+
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 20s; }
+        .particle:nth-child(2) { left: 20%; animation-delay: 2s; animation-duration: 18s; }
+        .particle:nth-child(3) { left: 30%; animation-delay: 4s; animation-duration: 22s; }
+        .particle:nth-child(4) { left: 40%; animation-delay: 1s; animation-duration: 19s; }
+        .particle:nth-child(5) { left: 50%; animation-delay: 3s; animation-duration: 21s; }
+        .particle:nth-child(6) { left: 60%; animation-delay: 5s; animation-duration: 17s; }
+        .particle:nth-child(7) { left: 70%; animation-delay: 2.5s; animation-duration: 23s; }
+        .particle:nth-child(8) { left: 80%; animation-delay: 1.5s; animation-duration: 16s; }
+        .particle:nth-child(9) { left: 90%; animation-delay: 4.5s; animation-duration: 20s; }
+
+        @keyframes particleFloat {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+        }
+
+        /* Main Content */
+        .landing-container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navigation */
+        .nav {
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: white;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .logo-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-link i {
+            font-size: 1rem;
+        }
+
+        /* Hero Section */
+        .hero {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 3rem 4rem;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hero-text {
+            max-width: 600px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(102, 126, 234, 0.15);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-badge i {
+            font-size: 0.9rem;
+        }
+
+        .hero-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -1px;
+        }
+
+        .hero-title .gradient {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-description {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 2.5rem;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 14px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-primary i {
+            font-size: 1.1rem;
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 14px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Hero Visual */
+        .hero-visual {
+            position: relative;
+        }
+
+        .app-preview {
+            background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transform: perspective(1000px) rotateY(-5deg) rotateX(2deg);
+            transition: all 0.5s ease;
+        }
+
+        .app-preview:hover {
+            transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
+        }
+
+        .preview-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .preview-dots {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .preview-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .preview-dot.red { background: #ff5f57; }
+        .preview-dot.yellow { background: #ffbd2e; }
+        .preview-dot.green { background: #28c840; }
+
+        .preview-title {
+            flex: 1;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .preview-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .preview-day {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .preview-day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .preview-day-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .preview-day-count {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: rgba(102, 126, 234, 0.2);
+            padding: 0.2rem 0.5rem;
+            border-radius: 20px;
+        }
+
+        .preview-task {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.5rem 0;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .preview-task i {
+            color: var(--primary);
+            font-size: 0.8rem;
+        }
+
+        .preview-task.completed {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+
+        .preview-task.completed i {
+            color: #10b981;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 4rem 3rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .features-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 1.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-5px);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-icon.purple {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.1) 100%);
+            color: var(--primary);
+        }
+
+        .feature-icon.orange {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 152, 0, 0.1) 100%);
+            color: #ffc107;
+        }
+
+        .feature-icon.green {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.1) 100%);
+            color: #10b981;
+        }
+
+        .feature-icon.pink {
+            background: linear-gradient(135deg, rgba(240, 147, 251, 0.2) 0%, rgba(236, 72, 153, 0.1) 100%);
+            color: var(--accent);
+        }
+
+        .feature-card h3 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 2rem 3rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: var(--text-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero-text {
+                max-width: 100%;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+
+            .hero-visual {
+                display: none;
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav {
+                padding: 1rem 1.5rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                padding: 2rem 1.5rem;
+            }
+
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .hero-description {
+                font-size: 1rem;
+            }
+
+            .features {
+                padding: 3rem 1.5rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+            }
+
+            .btn-primary, .btn-secondary {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="background-gradient"></div>
+    <div class="bg-animation"></div>
     
-    <div class="container">
-        <header class="header">
-            <div class="header-content">
-                <div class="header-left">
-                    <i class="fas fa-tasks header-icon"></i>
-                    <div>
-                        <h1 class="title">My Weekly Todo</h1>
-                        <p class="subtitle">Stay organized, stay productive</p>
-                    </div>
-                </div>
-                <div class="header-actions">
-                    <button class="header-btn focus-mode-btn" onclick="toggleFocusMode()" title="Focus Mode">
-                        <i class="fas fa-bullseye" id="focusIcon"></i>
-                    </button>
-                    <a href="calendar.html" class="header-btn calendar-btn" title="Calendar">
-                        <i class="fas fa-calendar-alt"></i>
-                    </a>
-                    <div class="profile-display" onclick="openProfileModal()" title="Profile">
-                        <span class="profile-name" id="profileNameDisplay">Guest</span>
-                        <button class="header-btn profile-btn">
-                            <i class="fas fa-user-circle"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Hidden file input for import -->
-        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleFileImport(event)">
-
-        <!-- Filter Bar -->
-        <div class="filter-bar">
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Search tasks..." onkeyup="filterTasks()">
-            </div>
-            <div class="filter-buttons">
-                <button class="filter-btn" onclick="showInboxView()" data-filter="inbox">
-                    <i class="fas fa-inbox"></i> INBOX
-                </button>
-                <button class="filter-btn active" onclick="filterByStatus('all')" data-filter="all">
-                    <i class="fas fa-list"></i> All
-                </button>
-                <button class="filter-btn" onclick="filterByStatus('active')" data-filter="active">
-                    <i class="fas fa-circle-notch"></i> Active
-                </button>
-                <button class="filter-btn" onclick="filterByStatus('completed')" data-filter="completed">
-                    <i class="fas fa-check"></i> Completed
-                </button>
-                <button class="filter-btn" onclick="filterByPriority('high')" data-filter="high">
-                    <i class="fas fa-exclamation-circle"></i> High Priority
-                </button>
-            </div>
-        </div>
-
-        <div class="week-grid">
-            <!-- Monday -->
-            <div class="day-card" data-day="monday">
-                <div class="day-header">
-                    <div class="day-title-wrapper">
-                        <i class="fas fa-calendar-day day-icon"></i>
-                        <h2 class="day-title">Monday</h2>
-                    </div>
-                    <button class="add-task-btn" onclick="openTaskModal('monday')">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-                <div class="task-count" id="monday-count">0 tasks</div>
-                <div class="tasks-container" id="monday-tasks"></div>
-            </div>
-
-            <!-- Tuesday -->
-            <div class="day-card" data-day="tuesday">
-                <div class="day-header">
-                    <div class="day-title-wrapper">
-                        <i class="fas fa-calendar-day day-icon"></i>
-                        <h2 class="day-title">Tuesday</h2>
-                    </div>
-                    <button class="add-task-btn" onclick="openTaskModal('tuesday')">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-                <div class="task-count" id="tuesday-count">0 tasks</div>
-                <div class="tasks-container" id="tuesday-tasks"></div>
-            </div>
-
-            <!-- Wednesday -->
-            <div class="day-card" data-day="wednesday">
-                <div class="day-header">
-                    <div class="day-title-wrapper">
-                        <i class="fas fa-calendar-day day-icon"></i>
-                        <h2 class="day-title">Wednesday</h2>
-                    </div>
-                    <button class="add-task-btn" onclick="openTaskModal('wednesday')">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-                <div class="task-count" id="wednesday-count">0 tasks</div>
-                <div class="tasks-container" id="wednesday-tasks"></div>
-            </div>
-
-            <!-- Thursday -->
-            <div class="day-card" data-day="thursday">
-                <div class="day-header">
-                    <div class="day-title-wrapper">
-                        <i class="fas fa-calendar-day day-icon"></i>
-                        <h2 class="day-title">Thursday</h2>
-                    </div>
-                    <button class="add-task-btn" onclick="openTaskModal('thursday')">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-                <div class="task-count" id="thursday-count">0 tasks</div>
-                <div class="tasks-container" id="thursday-tasks"></div>
-            </div>
-
-            <!-- Friday -->
-            <div class="day-card" data-day="friday">
-                <div class="day-header">
-                    <div class="day-title-wrapper">
-                        <i class="fas fa-calendar-day day-icon"></i>
-                        <h2 class="day-title">Friday</h2>
-                    </div>
-                    <button class="add-task-btn" onclick="openTaskModal('friday')">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-                <div class="task-count" id="friday-count">0 tasks</div>
-                <div class="tasks-container" id="friday-tasks"></div>
-            </div>
-
-            <!-- Saturday -->
-            <div class="day-card" data-day="saturday">
-                <div class="day-header">
-                    <div class="day-title-wrapper">
-                        <i class="fas fa-calendar-day day-icon"></i>
-                        <h2 class="day-title">Saturday</h2>
-                    </div>
-                    <button class="add-task-btn" onclick="openTaskModal('saturday')">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-                <div class="task-count" id="saturday-count">0 tasks</div>
-                <div class="tasks-container" id="saturday-tasks"></div>
-            </div>
-
-            <!-- Sunday -->
-            <div class="day-card" data-day="sunday">
-                <div class="day-header">
-                    <div class="day-title-wrapper">
-                        <i class="fas fa-calendar-day day-icon"></i>
-                        <h2 class="day-title">Sunday</h2>
-                    </div>
-                    <button class="add-task-btn" onclick="openTaskModal('sunday')">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-                <div class="task-count" id="sunday-count">0 tasks</div>
-                <div class="tasks-container" id="sunday-tasks"></div>
-            </div>
-        </div>
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
     </div>
 
-    <!-- Task Modal -->
-    <div class="modal-overlay" id="taskModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title" id="modalTitle">
-                    <i class="fas fa-plus-circle"></i> Add New Task
-                </h3>
-                <button class="close-btn" onclick="closeTaskModal()">
-                    <i class="fas fa-times"></i>
-                </button>
+    <div class="landing-container">
+        <nav class="nav">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-check-double"></i>
+                </div>
+                <span class="logo-text">Weekly Todo</span>
             </div>
-            <form class="task-form" id="taskForm">
-                <div class="form-row">
-                    <div class="form-group flex-1">
-                        <label for="taskTitle">
-                            <i class="fas fa-heading"></i> Task Title
-                        </label>
-                        <input type="text" id="taskTitle" placeholder="Enter task title..." required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="taskPriority">
-                            <i class="fas fa-flag"></i> Priority
-                        </label>
-                        <select id="taskPriority">
-                            <option value="low">Low</option>
-                            <option value="medium" selected>Medium</option>
-                            <option value="high">High</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="taskCategory">
-                            <i class="fas fa-tag"></i> Category
-                        </label>
-                        <select id="taskCategory">
-                            <option value="work">Work</option>
-                            <option value="personal">Personal</option>
-                            <option value="health">Health</option>
-                            <option value="study">Study</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="taskPeriod">
-                            <i class="fas fa-sun"></i> Time Period
-                        </label>
-                        <select id="taskPeriod">
-                            <option value="">Not specified</option>
-                            <option value="early-morning">Early Morning </option>
-                            <option value="morning">Morning </option>
-                            <option value="afternoon">Afternoon </option>
-                            <option value="evening">Evening </option>
-                            <option value="night">Night </option>
-                            <option value="late-night">Late Night </option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="taskTime">
-                            <i class="fas fa-clock"></i> Time
-                        </label>
-                        <input type="time" id="taskTime">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="taskDueDate">
-                            <i class="fas fa-calendar-alt"></i> Due Date
-                        </label>
-                        <input type="date" id="taskDueDate">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="taskDescription">
-                        <i class="fas fa-align-left"></i> Description
-                    </label>
-                    <textarea id="taskDescription" rows="3" placeholder="Add details about your task..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="taskNotes">
-                        <i class="fas fa-sticky-note"></i> Side Notes
-                    </label>
-                    <textarea id="taskNotes" rows="2" placeholder="Additional notes or reminders..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>
-                        <i class="fas fa-list-ul"></i> Subtasks
-                    </label>
-                    <div class="subtasks-container" id="subtasksContainer"></div>
-                    <button type="button" class="btn-add-subtask" onclick="addSubtaskInput()">
-                        <i class="fas fa-plus"></i> Add Subtask
-                    </button>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">
-                        <i class="fas fa-times"></i> Cancel
-                    </button>
-                    <button type="submit" class="btn btn-primary" id="submitBtn">
-                        <i class="fas fa-check"></i> Add Task
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Custom Notification -->
-    <div class="custom-notification" id="customNotification">
-        <div class="notification-content">
-            <i class="notification-icon"></i>
-            <span class="notification-message"></span>
-        </div>
-    </div>
-
-    <!-- Custom Confirm Dialog -->
-    <div class="confirm-overlay" id="confirmDialog">
-        <div class="confirm-content">
-            <div class="confirm-header">
-                <i class="fas fa-exclamation-circle"></i>
-                <h3 class="confirm-title">Confirm Action</h3>
+            <div class="nav-links">
+                <a href="patchnotes.html" class="nav-link">
+                    <i class="fas fa-scroll"></i> Updates
+                </a>
+                <a href="feedback.html" class="nav-link">
+                    <i class="fas fa-comment-dots"></i> Feedback
+                </a>
+                <a href="privacy.html" class="nav-link">
+                    <i class="fas fa-shield-alt"></i> Privacy
+                </a>
             </div>
-            <p class="confirm-message">Are you sure?</p>
-            <div class="confirm-actions">
-                <button class="btn btn-secondary" onclick="closeConfirm(false)">
-                    <i class="fas fa-times"></i> Cancel
-                </button>
-                <button class="btn btn-danger" onclick="closeConfirm(true)">
-                    <i class="fas fa-check"></i> Confirm
-                </button>
-            </div>
-        </div>
-    </div>
+        </nav>
 
-    <!-- Profile Modal -->
-    <div class="modal-overlay" id="profileModal">
-        <div class="modal-content profile-modal-content">
-            <div class="modal-header">
-                <div class="modal-title-wrapper">
-                    <i class="fas fa-user-circle"></i>
-                    <h3>Profile Settings</h3>
-                </div>
-                <button class="close-btn" onclick="closeProfileModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="profileForm" class="profile-form">
-                    <div class="form-group">
-                        <label for="profileName">
-                            <i class="fas fa-user"></i> Name
-                        </label>
-                        <input 
-                            type="text" 
-                            id="profileName" 
-                            placeholder="Enter your name"
-                        >
+        <section class="hero">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <div class="hero-badge">
+                        <i class="fas fa-sparkles"></i>
+                        <span>Your productivity companion</span>
                     </div>
-                    <div class="form-group">
-                        <label for="profileEmail">
-                            <i class="fas fa-envelope"></i> Email
-                        </label>
-                        <input 
-                            type="email" 
-                            id="profileEmail" 
-                            placeholder="Enter your email"
-                        >
-                    </div>
-                    <div class="form-group">
-                        <label for="profileAge">
-                            <i class="fas fa-birthday-cake"></i> Age
-                        </label>
-                        <input 
-                            type="number" 
-                            id="profileAge" 
-                            placeholder="Enter your age"
-                            min="13"
-                            max="120"
-                        >
-                    </div>
-                    <button type="button" class="btn btn-primary" onclick="saveProfile()">
-                        <i class="fas fa-save"></i> Save Profile
-                    </button>
-                </form>
-
-                <div class="profile-divider"></div>
-
-                <div class="profile-actions">
-                    <h4><i class="fas fa-cog"></i> Settings & Actions</h4>
-                    
-                    <div class="profile-action-buttons">
-                        <button class="profile-action-btn theme-toggle-btn" onclick="toggleTheme()">
-                            <i class="fas fa-moon" id="themeIconProfile"></i>
-                            <span id="themeText">Dark Mode</span>
-                        </button>
-                        <a href="reports.html" class="profile-action-btn reports-btn">
-                            <i class="fas fa-chart-line"></i>
-                            <span>Weekly Reports</span>
-                        </a>
-                        <button class="profile-action-btn" onclick="importTasks()">
-                            <i class="fas fa-upload"></i>
-                            <span>Import Tasks</span>
-                        </button>
-                        <button class="profile-action-btn" onclick="exportTasks()">
-                            <i class="fas fa-download"></i>
-                            <span>Export Tasks</span>
-                        </button>
-                        <a href="feedback.html" class="profile-action-btn">
-                            <i class="fas fa-comment-dots"></i>
-                            <span>Send Feedback</span>
+                    <h1 class="hero-title">
+                        Plan Your Week,<br>
+                        <span class="gradient">Achieve Your Goals</span>
+                    </h1>
+                    <p class="hero-description">
+                        The smart weekly planner that helps you organize tasks, track progress, 
+                        and earn rewards. Simple, beautiful, and designed to keep you motivated.
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="app.html" class="btn-primary">
+                            <i class="fas fa-rocket"></i>
+                            Launch Weekly
                         </a>
                     </div>
                 </div>
+                <div class="hero-visual">
+                    <div class="app-preview">
+                        <div class="preview-header">
+                            <div class="preview-dots">
+                                <div class="preview-dot red"></div>
+                                <div class="preview-dot yellow"></div>
+                                <div class="preview-dot green"></div>
+                            </div>
+                            <div class="preview-title">Weekly Todo</div>
+                        </div>
+                        <div class="preview-content">
+                            <div class="preview-day">
+                                <div class="preview-day-header">
+                                    <span class="preview-day-name">Monday</span>
+                                    <span class="preview-day-count">3 tasks</span>
+                                </div>
+                                <div class="preview-task completed">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Morning workout</span>
+                                </div>
+                                <div class="preview-task">
+                                    <i class="fas fa-circle"></i>
+                                    <span>Team meeting at 10am</span>
+                                </div>
+                                <div class="preview-task">
+                                    <i class="fas fa-circle"></i>
+                                    <span>Review project docs</span>
+                                </div>
+                            </div>
+                            <div class="preview-day">
+                                <div class="preview-day-header">
+                                    <span class="preview-day-name">Tuesday</span>
+                                    <span class="preview-day-count">2 tasks</span>
+                                </div>
+                                <div class="preview-task">
+                                    <i class="fas fa-circle"></i>
+                                    <span>Client presentation</span>
+                                </div>
+                                <div class="preview-task">
+                                    <i class="fas fa-circle"></i>
+                                    <span>Code review session</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-content">
-            <p>&copy; 2026 Weekly Todo. All rights reserved.</p>
+        <section class="features" id="features">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon purple">
+                        <i class="fas fa-calendar-week"></i>
+                    </div>
+                    <h3>Weekly Overview</h3>
+                    <p>See your entire week at a glance with beautiful day cards</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon orange">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <h3>Earn Coins</h3>
+                    <p>Complete tasks to earn coins and unlock premium features</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon green">
+                        <i class="fas fa-bullseye"></i>
+                    </div>
+                    <h3>Focus Mode</h3>
+                    <p>Distraction-free view to concentrate on today's tasks</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon pink">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3>AI Assistant</h3>
+                    <p>Natural language task creation with Weekly Agent</p>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
             <div class="footer-links">
-                <a href="tos.html" class="footer-link">
-                    <i class="fas fa-file-contract"></i> Terms of Service
-                </a>
-                <a href="privacy.html" class="footer-link">
-                    <i class="fas fa-shield-alt"></i> Privacy Policy
-                </a>
+                <a href="tos.html" class="footer-link">Terms of Service</a>
+                <a href="privacy.html" class="footer-link">Privacy Policy</a>
+                <a href="feedback.html" class="footer-link">Contact</a>
             </div>
-        </div>
-    </footer>
-
-    <!-- Floating AI Creator Button -->
-    <a href="ai-creator.html" class="ai-chat-button" id="aiChatButton">
-        <i class="fas fa-brain"></i>
-        <span class="ai-badge" id="aiChatBadge">AI</span>
-    </a>
-
-    <!-- AI Chat Window -->
-    <div class="ai-chat-window" id="aiChatWindow">
-        <div class="ai-chat-header">
-            <div class="ai-chat-header-left">
-                <div class="ai-avatar premium-avatar">
-                    <i class="fas fa-brain"></i>
-                    <div class="ai-pulse-ring"></div>
-                </div>
-                <div class="ai-header-info">
-                    <h3><i class="fas fa-sparkles"></i> AI Task Creator</h3>
-                    <p class="ai-status"><span class="status-dot"></span> Intelligent & Ready</p>
-                </div>
-            </div>
-            <button class="ai-chat-close" onclick="toggleAIChat()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        
-        <div class="ai-chat-messages" id="aiChatMessages">
-            <div class="ai-message ai-bot-message" id="welcomeMessage">
-                <div class="ai-message-avatar">
-                    <i class="fas fa-brain"></i>
-                </div>
-                <div class="ai-message-content premium-message">
-                    <div class="premium-welcome-header">
-                        <div class="welcome-icon">
-                            <i class="fas fa-magic"></i>
-                        </div>
-                        <div class="welcome-text">
-                            <h3>✨ Intelligent Task Creation</h3>
-                            <p>I auto-detect and process both natural language and JSON</p>
-                        </div>
-                    </div>
-                    
-                    <div class="feature-showcase">
-                        <div class="feature-card premium">
-                            <div class="feature-icon-wrapper">
-                                <i class="fas fa-comment-dots"></i>
-                            </div>
-                            <div class="feature-info">
-                                <strong>Natural Language</strong>
-                                <span>"Meeting Monday 10am high priority work"</span>
-                            </div>
-                        </div>
-                        <div class="feature-card premium">
-                            <div class="feature-icon-wrapper">
-                                <i class="fas fa-code"></i>
-                            </div>
-                            <div class="feature-info">
-                                <strong>JSON Format</strong>
-                                <span>Paste array for bulk task import</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="premium-cta">
-                        <button class="cta-btn primary" onclick="showJSONTemplate()">
-                            <i class="fas fa-file-code"></i>
-                            <span>View JSON Template</span>
-                        </button>
-                        <button class="cta-btn secondary" onclick="showJSONExample()">
-                            <i class="fas fa-lightbulb"></i>
-                            <span>See Examples</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="ai-chat-input-container premium-input-container">
-            <div class="input-format-indicator" id="formatIndicator">
-                <i class="fas fa-circle-notch fa-spin"></i>
-                <span>Auto-detecting format...</span>
-            </div>
-            <div class="ai-chat-input-wrapper premium-wrapper">
-                <textarea 
-                    id="aiChatInput" 
-                    placeholder="Type naturally: 'Call dentist Monday 2pm' or paste JSON array: [{&quot;task&quot;:&quot;...&quot;}]" 
-                    rows="3"
-                    oninput="detectInputFormat()"
-                    onkeydown="handleChatKeyPress(event)"
-                ></textarea>
-                <button class="ai-send-button premium-send" onclick="sendChatMessage()">
-                    <i class="fas fa-magic"></i>
-                    <span>Create</span>
-                </button>
-            </div>
-            <div class="ai-quick-actions premium-actions">
-                <button class="ai-quick-btn" onclick="showJSONTemplate()">
-                    <i class="fas fa-file-code"></i> Template
-                </button>
-                <button class="ai-quick-btn" onclick="showJSONExample()">
-                    <i class="fas fa-lightbulb"></i> Examples
-                </button>
-                <button class="ai-quick-btn" onclick="clearChatInput()">
-                    <i class="fas fa-eraser"></i> Clear
-                </button>
-            </div>
-        </div>
+            <p>&copy; 2026 Weekly Todo. All rights reserved.</p>
+        </footer>
     </div>
-
-    <script src="script.js"></script>
 </body>
 </html>
