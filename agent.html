@@ -6,6 +6,24 @@
     <title>Weekly Agent - Weekly Todo</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="agent.css">
+    <script>
+        // Protection: Check if feature is unlocked before allowing access
+        (function() {
+            function isFeatureUnlocked(featureName) {
+                try {
+                    var features = JSON.parse(localStorage.getItem('unlockedFeatures') || '{}');
+                    return features[featureName] === true;
+                } catch(e) {
+                    return false;
+                }
+            }
+            
+            if (!isFeatureUnlocked('agent')) {
+                alert('⚠️ Access Denied: Weekly Agent is a premium feature that requires 50 coins to unlock. Please unlock it from the main app first.');
+                window.location.href = 'app.html';
+            }
+        })();
+    </script>
 </head>
 <body>
     <div class="container">

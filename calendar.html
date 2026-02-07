@@ -4,6 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Beautiful Calendar</title>
+    <script>
+        // Protection: Check if feature is unlocked before allowing access
+        (function() {
+            function isFeatureUnlocked(featureName) {
+                try {
+                    var features = JSON.parse(localStorage.getItem('unlockedFeatures') || '{}');
+                    return features[featureName] === true;
+                } catch(e) {
+                    return false;
+                }
+            }
+            
+            if (!isFeatureUnlocked('calendar')) {
+                alert('⚠️ Access Denied: Calendar is a premium feature that requires 15 coins to unlock. Please unlock it from the main app first.');
+                window.location.href = 'app.html';
+            }
+        })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
