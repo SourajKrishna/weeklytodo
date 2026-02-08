@@ -48,10 +48,6 @@
                     <i class="fas fa-bullseye" id="focusIcon"></i>
                     <span class="lock-indicator"><i class="fas fa-lock"></i></span>
                 </button>
-                <a href="#" class="action-icon-btn feature-locked" onclick="tryCalendar(event)" title="Calendar (15 coins)">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span class="lock-indicator"><i class="fas fa-lock"></i></span>
-                </a>
                 <a href="#" class="action-icon-btn agent-btn feature-locked" onclick="tryAgent(event)" title="Weekly Agent (50 coins)">
                     <i class="fas fa-robot"></i>
                     <span class="lock-indicator"><i class="fas fa-lock"></i></span>
@@ -62,6 +58,22 @@
 
         <!-- Hidden file input for import -->
         <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleFileImport(event)">
+
+        <!-- Week Navigation -->
+        <div class="week-navigation">
+            <button class="week-nav-btn week-nav-prev" onclick="changeWeek(-1)" title="Previous Week">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="week-selector">
+                <div class="week-info">
+                    <span class="week-label">Week <span id="currentWeekNumber">1</span></span>
+                    <span class="week-date-range" id="weekDateRange">Feb 3 - Feb 9, 2026</span>
+                </div>
+            </div>
+            <button class="week-nav-btn week-nav-next" onclick="changeWeek(1)" title="Next Week">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
 
         <!-- Quick Filter Pills -->
         <div class="quick-filters">
@@ -87,7 +99,10 @@
             <!-- Monday -->
             <div class="day-card-modern" data-day="monday">
                 <div class="day-card-header">
-                    <span class="day-label">Mon</span>
+                    <div class="day-header-left">
+                        <span class="day-label">Mon</span>
+                        <span class="day-date-badge" id="monday-date">Feb 3</span>
+                    </div>
                     <span class="day-count" id="monday-count">0</span>
                 </div>
                 <div class="tasks-container" id="monday-tasks"></div>
@@ -99,7 +114,10 @@
             <!-- Tuesday -->
             <div class="day-card-modern" data-day="tuesday">
                 <div class="day-card-header">
-                    <span class="day-label">Tue</span>
+                    <div class="day-header-left">
+                        <span class="day-label">Tue</span>
+                        <span class="day-date-badge" id="tuesday-date">Feb 4</span>
+                    </div>
                     <span class="day-count" id="tuesday-count">0</span>
                 </div>
                 <div class="tasks-container" id="tuesday-tasks"></div>
@@ -111,7 +129,10 @@
             <!-- Wednesday -->
             <div class="day-card-modern" data-day="wednesday">
                 <div class="day-card-header">
-                    <span class="day-label">Wed</span>
+                    <div class="day-header-left">
+                        <span class="day-label">Wed</span>
+                        <span class="day-date-badge" id="wednesday-date">Feb 5</span>
+                    </div>
                     <span class="day-count" id="wednesday-count">0</span>
                 </div>
                 <div class="tasks-container" id="wednesday-tasks"></div>
@@ -123,7 +144,10 @@
             <!-- Thursday -->
             <div class="day-card-modern" data-day="thursday">
                 <div class="day-card-header">
-                    <span class="day-label">Thu</span>
+                    <div class="day-header-left">
+                        <span class="day-label">Thu</span>
+                        <span class="day-date-badge" id="thursday-date">Feb 6</span>
+                    </div>
                     <span class="day-count" id="thursday-count">0</span>
                 </div>
                 <div class="tasks-container" id="thursday-tasks"></div>
@@ -135,7 +159,10 @@
             <!-- Friday -->
             <div class="day-card-modern" data-day="friday">
                 <div class="day-card-header">
-                    <span class="day-label">Fri</span>
+                    <div class="day-header-left">
+                        <span class="day-label">Fri</span>
+                        <span class="day-date-badge" id="friday-date">Feb 7</span>
+                    </div>
                     <span class="day-count" id="friday-count">0</span>
                 </div>
                 <div class="tasks-container" id="friday-tasks"></div>
@@ -147,7 +174,10 @@
             <!-- Saturday -->
             <div class="day-card-modern weekend" data-day="saturday">
                 <div class="day-card-header">
-                    <span class="day-label">Sat</span>
+                    <div class="day-header-left">
+                        <span class="day-label">Sat</span>
+                        <span class="day-date-badge" id="saturday-date">Feb 8</span>
+                    </div>
                     <span class="day-count" id="saturday-count">0</span>
                 </div>
                 <div class="tasks-container" id="saturday-tasks"></div>
@@ -159,7 +189,10 @@
             <!-- Sunday -->
             <div class="day-card-modern weekend" data-day="sunday">
                 <div class="day-card-header">
-                    <span class="day-label">Sun</span>
+                    <div class="day-header-left">
+                        <span class="day-label">Sun</span>
+                        <span class="day-date-badge" id="sunday-date">Feb 9</span>
+                    </div>
                     <span class="day-count" id="sunday-count">0</span>
                 </div>
                 <div class="tasks-container" id="sunday-tasks"></div>
@@ -305,6 +338,12 @@
             <span class="notification-message"></span>
         </div>
     </div>
+    
+    <!-- Auto-save indicator -->
+    <div class="auto-save-indicator" id="autoSaveIndicator" style="display: none;">
+        <i class="fas fa-sync-alt fa-spin"></i>
+        <span>Saving...</span>
+    </div>
 
     <!-- Custom Confirm Dialog -->
     <div class="confirm-overlay" id="confirmDialog">
@@ -338,6 +377,28 @@
                 </button>
             </div>
             <div class="modal-body">
+                <!-- Profile Picture Section -->
+                <div class="profile-picture-section">
+                    <div class="profile-picture-container">
+                        <div class="profile-picture-ring">
+                            <div class="profile-picture-display" id="profilePictureDisplay">
+                                <i class="fas fa-user" id="profilePictureIcon"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="profile-picture-actions">
+                        <input type="file" id="profilePictureInput" accept="image/*" style="display: none;" onchange="handleProfilePictureUpload(event)">
+                        <button type="button" class="btn btn-secondary btn-upload" onclick="document.getElementById('profilePictureInput').click()">
+                            <i class="fas fa-camera"></i> Upload Photo
+                        </button>
+                        <button type="button" class="btn btn-outline btn-remove" onclick="removeProfilePicture()" id="removePhotoBtn" style="display: none;">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+
+                <div class="profile-divider"></div>
+
                 <form id="profileForm" class="profile-form">
                     <div class="form-group">
                         <label for="profileName">

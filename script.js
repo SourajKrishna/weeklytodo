@@ -1,13 +1,7 @@
-// Task data structure
-var tasks = {
-    monday: [],
-    tuesday: [],
-    wednesday: [],
-    thursday: [],
-    friday: [],
-    saturday: [],
-    sunday: []
-};
+// Task data structure - now organized by weeks
+var tasks = {}; // Format: { "week1": { monday: [], tuesday: [], ... }, "week2": { ... } }
+var currentWeek = 1; // Current week number
+var weekStartDate = new Date(2026, 1, 3); // Feb 3, 2026 (Year, Month-1, Day)
 
 var currentDay = '';
 var editingTaskId = null;
@@ -66,9 +60,12 @@ function playSound(soundName) {
 
 // Initialize app when DOM is ready
 window.addEventListener('load', function() {
-    checkWeeklyReset();
+    // Weekly reset removed - tasks persist indefinitely
+    initializeWeekSystem();
     loadTasksFromStorage();
     loadTheme();
+    updateWeekDisplay();
+    updateDateBadges();
     renderAllTasks();
     setupEventListeners();
     updateProfileDisplay();
@@ -76,18 +73,161 @@ window.addEventListener('load', function() {
     updateFeatureLockStates(); // Initialize feature lock states
 });
 
-// Check if new week started and save report
-function checkWeeklyReset() {
-    var lastWeekStart = localStorage.getItem('lastWeekStart');
-    var currentWeekStart = getWeekStartDate();
+// Custom beforeunload message
+var hasUnsavedChanges = false;
+window.addEventListener('beforeunload', function(e) {
+    if (hasUnsavedChanges) {
+        var message = 'You have unsaved changes. Are you sure you want to leave?';
+        e.preventDefault();
+        e.returnValue = message;
+        
+        // Show custom modal instead of browser default
+        setTimeout(function() {
+            showCustomLeaveWarning();
+        }, 100);
+        
+        return message;
+    }
+});
+
+function showCustomLeaveWarning() {
+    // This will be called but browser will show its own dialog
+    // We'll track changes and save automatically instead
+}
+
+function markAsChanged() {
+    hasUnsavedChanges = true;
     
-    if (lastWeekStart && lastWeekStart !== currentWeekStart) {
-        // New week detected - save report and reset
-        saveWeeklyReport();
-        resetWeeklyData();
+    // Show save indicator
+    var indicator = document.getElementById('autoSaveIndicator');
+    if (indicator) {
+        indicator.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i><span>Saving...</span>';
+        indicator.style.display = 'flex';
+        indicator.classList.add('show');
     }
     
-    localStorage.setItem('lastWeekStart', currentWeekStart);
+    // Auto-save after 1.5 seconds of inactivity
+    clearTimeout(window.autoSaveTimeout);
+    window.autoSaveTimeout = setTimeout(function() {
+        saveTasksToStorage();
+        hasUnsavedChanges = false;
+        
+        // Update indicator to show saved
+        if (indicator) {
+            indicator.classList.add('saved');
+            indicator.innerHTML = '<i class="fas fa-check-circle"></i><span>Saved</span>';
+            
+            // Hide after 2 seconds
+            setTimeout(function() {
+                indicator.classList.remove('show', 'saved');
+                setTimeout(function() {
+                    indicator.style.display = 'none';
+                }, 300);
+            }, 2000);
+        }
+    }, 1500);
+}
+
+// Weekly reset functionality removed - tasks now persist indefinitely
+// Users can manually select weeks for tasks for long-term planning
+
+// Initialize week system
+function initializeWeekSystem() {
+    var savedWeek = localStorage.getItem('currentWeek');
+    if (savedWeek) {
+        currentWeek = parseInt(savedWeek);
+    }
+    
+    // Initialize current week if it doesn't exist
+    if (!tasks['week' + currentWeek]) {
+        tasks['week' + currentWeek] = {
+            monday: [],
+            tuesday: [],
+            wednesday: [],
+            thursday: [],
+            friday: [],
+            saturday: [],
+            sunday: []
+        };
+    }
+}
+
+// Change week navigation
+function changeWeek(direction) {
+    currentWeek += direction;
+    if (currentWeek < 1) currentWeek = 1; // Don't go below week 1
+    
+    localStorage.setItem('currentWeek', currentWeek);
+    
+    // Initialize week if it doesn't exist
+    if (!tasks['week' + currentWeek]) {
+        tasks['week' + currentWeek] = {
+            monday: [],
+            tuesday: [],
+            wednesday: [],
+            thursday: [],
+            friday: [],
+            saturday: [],
+            sunday: []
+        };
+    }
+    
+    updateWeekDisplay();
+    updateDateBadges();
+    renderAllTasks();
+    playSound('click');
+}
+
+// Update week display
+function updateWeekDisplay() {
+    var weekNumberEl = document.getElementById('currentWeekNumber');
+    var weekDateRangeEl = document.getElementById('weekDateRange');
+    
+    if (weekNumberEl) {
+        weekNumberEl.textContent = currentWeek;
+    }
+    
+    if (weekDateRangeEl) {
+        var weekStart = getWeekStartDateForWeek(currentWeek);
+        var weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        
+        var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        var startMonth = months[weekStart.getMonth()];
+        var endMonth = months[weekEnd.getMonth()];
+        var startDay = weekStart.getDate();
+        var endDay = weekEnd.getDate();
+        var year = weekStart.getFullYear();
+        
+        var dateRangeText = startMonth + ' ' + startDay + ' - ' + endMonth + ' ' + endDay + ', ' + year;
+        weekDateRangeEl.textContent = dateRangeText;
+    }
+}
+
+// Get week start date for a specific week number
+function getWeekStartDateForWeek(weekNum) {
+    var baseDate = new Date(weekStartDate);
+    baseDate.setDate(baseDate.getDate() + (weekNum - 1) * 7);
+    return baseDate;
+}
+
+// Update date badges for all day cards
+function updateDateBadges() {
+    var days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    var weekStart = getWeekStartDateForWeek(currentWeek);
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    days.forEach(function(day, index) {
+        var currentDate = new Date(weekStart);
+        currentDate.setDate(currentDate.getDate() + index);
+        
+        var badge = document.getElementById(day + '-date');
+        if (badge) {
+            var month = months[currentDate.getMonth()];
+            var dayNum = currentDate.getDate();
+            badge.textContent = month + ' ' + dayNum;
+        }
+    });
 }
 
 function getWeekStartDate() {
@@ -140,9 +280,12 @@ function calculateWeekStats() {
     };
     
     var days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    var weekKey = 'week' + currentWeek;
+    
+    if (!tasks[weekKey]) return stats;
     
     days.forEach(function(day) {
-        var dayTasks = tasks[day] || [];
+        var dayTasks = tasks[weekKey][day] || [];
         var dayCompleted = 0;
         
         dayTasks.forEach(function(task) {
@@ -177,20 +320,7 @@ function calculateWeekStats() {
     return stats;
 }
 
-function resetWeeklyData() {
-    // Keep the structure but clear tasks
-    tasks = {
-        monday: [],
-        tuesday: [],
-        wednesday: [],
-        thursday: [],
-        friday: [],
-        saturday: [],
-        sunday: []
-    };
-    saveTasksToStorage();
-    renderAllTasks();
-}
+// resetWeeklyData function removed - data persists indefinitely
 
 function setupEventListeners() {
     // Setup form submission - only via button click
@@ -366,7 +496,8 @@ function updateFocusClock() {
 function renderFocusTasks(day) {
     var tasksList = document.getElementById('focusTasksList');
     var emptyState = document.getElementById('focusEmptyState');
-    var dayTasks = tasks[day] || [];
+    var weekKey = 'week' + currentWeek;
+    var dayTasks = (tasks[weekKey] && tasks[weekKey][day]) ? tasks[weekKey][day] : [];
     
     if (!tasksList) return;
     
@@ -451,7 +582,7 @@ function toggleFocusTaskComplete(day, taskId) {
             
             if (!wasCompleted && tasks[day][i].completed) {
                 // Award coins for completing task
-                addCoins(COINS_PER_TASK, 'Completed task: ' + tasks[day][i].title);
+                addCoins(COINS_PER_TASK, 'Completed task: ' + tasks[weekKey][day][i].title);
                 
                 var profile = JSON.parse(localStorage.getItem('userProfile') || '{}');
                 var name = profile.name && profile.name.trim() !== '' ? profile.name : '';
@@ -462,7 +593,7 @@ function toggleFocusTaskComplete(day, taskId) {
                     'You\'re crushing it' + (name ? ', ' + name : '') + '! +' + COINS_PER_TASK + ' coins! <i class="fas fa-fire"></i>'
                 ];
                 showNotification(messages[Math.floor(Math.random() * messages.length)], 'success');
-            } else if (wasCompleted && !tasks[day][i].completed) {
+            } else if (wasCompleted && !tasks[weekKey][day][i].completed) {
                 // Remove coins if uncompleting task
                 removeCoins(COINS_PER_TASK);
             }
@@ -486,12 +617,16 @@ function editTaskFromFocus(day, taskId) {
 function deleteTaskFromFocus(day, taskId) {
     showConfirm('Delete this task?', function(confirmed) {
         if (confirmed) {
-            for (var i = 0; i < tasks[day].length; i++) {
-                if (tasks[day][i].id === taskId) {
-                    tasks[day].splice(i, 1);
+            var weekKey = 'week' + currentWeek;
+            if (!tasks[weekKey] ||!tasks[weekKey][day]) return;
+            
+            for (var i = 0; i < tasks[weekKey][day].length; i++) {
+                if (tasks[weekKey][day][i].id === taskId) {
+                    tasks[weekKey][day].splice(i, 1);
                     break;
                 }
             }
+            markAsChanged();
             saveTasksToStorage();
             renderFocusTasks(day);
             renderTasks(day);
@@ -695,7 +830,6 @@ function closeCoinsHistory() {
 
 // ===== FEATURE UNLOCK SYSTEM =====
 var FEATURE_COSTS = {
-    calendar: 15,
     focusMode: 25,
     agent: 50
 };
@@ -745,12 +879,10 @@ function tryAccessFeature(featureName, callback) {
     var cost = FEATURE_COSTS[featureName];
     var data = getCoinsData();
     var featureNames = {
-        calendar: 'Calendar',
         focusMode: 'Focus Mode',
         agent: 'Weekly Agent'
     };
     var featureIcons = {
-        calendar: 'fa-calendar-alt',
         focusMode: 'fa-bullseye',
         agent: 'fa-robot'
     };
@@ -821,7 +953,6 @@ function closeUnlockModal() {
 
 function confirmUnlock(featureKey) {
     var featureNames = {
-        calendar: 'Calendar',
         focusMode: 'Focus Mode',
         agent: 'Weekly Agent'
     };
@@ -834,8 +965,6 @@ function confirmUnlock(featureKey) {
         setTimeout(function() {
             if (featureKey === 'focusMode') {
                 toggleFocusMode();
-            } else if (featureKey === 'calendar') {
-                window.location.href = 'calendar.html';
             } else if (featureKey === 'agent') {
                 window.location.href = 'agent.html';
             }
@@ -845,7 +974,6 @@ function confirmUnlock(featureKey) {
 
 function updateFeatureLockStates() {
     var focusBtn = document.querySelector('.action-icon-btn[onclick*="toggleFocusMode"], .action-icon-btn[onclick*="tryFocusMode"]');
-    var calendarBtn = document.querySelector('.action-icon-btn[href="calendar.html"], a.action-icon-btn[onclick*="tryCalendar"]');
     var agentBtn = document.querySelector('.action-icon-btn[href="agent.html"], a.action-icon-btn[onclick*="tryAgent"]');
     
     // Update Focus Mode button
@@ -858,21 +986,6 @@ function updateFeatureLockStates() {
             focusBtn.classList.add('feature-locked');
             focusBtn.setAttribute('onclick', 'tryFocusMode()');
             focusBtn.innerHTML = '<i class="fas fa-bullseye"></i><span class="lock-indicator"><i class="fas fa-lock"></i></span>';
-        }
-    }
-    
-    // Update Calendar button
-    if (calendarBtn) {
-        if (isFeatureUnlocked('calendar')) {
-            calendarBtn.classList.remove('feature-locked');
-            calendarBtn.removeAttribute('onclick');
-            calendarBtn.setAttribute('href', 'calendar.html');
-            calendarBtn.innerHTML = '<i class="fas fa-calendar-alt"></i>';
-        } else {
-            calendarBtn.classList.add('feature-locked');
-            calendarBtn.setAttribute('onclick', 'tryCalendar(event)');
-            calendarBtn.setAttribute('href', '#');
-            calendarBtn.innerHTML = '<i class="fas fa-calendar-alt"></i><span class="lock-indicator"><i class="fas fa-lock"></i></span>';
         }
     }
     
@@ -895,13 +1008,6 @@ function updateFeatureLockStates() {
 function tryFocusMode() {
     tryAccessFeature('focusMode', function() {
         toggleFocusMode();
-    });
-}
-
-function tryCalendar(event) {
-    if (event) event.preventDefault();
-    tryAccessFeature('calendar', function() {
-        window.location.href = 'calendar.html';
     });
 }
 
@@ -959,6 +1065,9 @@ function loadProfile() {
     if (nameInput && profile.name) nameInput.value = profile.name;
     if (emailInput && profile.email) emailInput.value = profile.email;
     if (ageInput && profile.age) ageInput.value = profile.age;
+    
+    // Load profile picture
+    updateProfilePictureDisplay();
 }
 
 function saveProfile() {
@@ -983,6 +1092,105 @@ function saveProfile() {
     }, 1500);
 }
 
+function handleProfilePictureUpload(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+    
+    // Check if file is an image
+    if (!file.type.startsWith('image/')) {
+        showNotification('Please select an image file', 'error');
+        return;
+    }
+    
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showNotification('Image size should be less than 5MB', 'error');
+        return;
+    }
+    
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var imageData = e.target.result;
+        localStorage.setItem('profilePicture', imageData);
+        updateProfilePictureDisplay();
+        showNotification('Profile picture uploaded successfully!', 'success');
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeProfilePicture() {
+    localStorage.removeItem('profilePicture');
+    updateProfilePictureDisplay();
+    showNotification('Profile picture removed', 'success');
+    // Reset file input
+    document.getElementById('profilePictureInput').value = '';
+}
+
+function updateProfilePictureDisplay() {
+    var profilePicture = localStorage.getItem('profilePicture');
+    var displayElement = document.getElementById('profilePictureDisplay');
+    var iconElement = document.getElementById('profilePictureIcon');
+    var removeBtn = document.getElementById('removePhotoBtn');
+    var avatarElement = document.getElementById('profileAvatarDisplay');
+    
+    if (profilePicture) {
+        // Update profile modal display
+        if (displayElement) {
+            var existingImg = displayElement.querySelector('img');
+            if (existingImg) {
+                existingImg.src = profilePicture;
+            } else {
+                var img = document.createElement('img');
+                img.src = profilePicture;
+                img.alt = 'Profile Picture';
+                displayElement.innerHTML = '';
+                displayElement.appendChild(img);
+            }
+        }
+        
+        // Update header avatar
+        if (avatarElement) {
+            var existingAvatarImg = avatarElement.querySelector('img');
+            if (existingAvatarImg) {
+                existingAvatarImg.src = profilePicture;
+            } else {
+                var img = document.createElement('img');
+                img.src = profilePicture;
+                img.alt = 'Profile';
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '50%';
+                avatarElement.innerHTML = '';
+                avatarElement.appendChild(img);
+            }
+        }
+        
+        // Show remove button
+        if (removeBtn) {
+            removeBtn.style.display = 'flex';
+        }
+    } else {
+        // Show default icon in modal
+        if (displayElement && iconElement) {
+            displayElement.innerHTML = '<i class="fas fa-user" id="profilePictureIcon"></i>';
+        }
+        
+        // Show initials in header
+        if (avatarElement) {
+            var profile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+            var name = (profile.name && profile.name.trim() !== '') ? profile.name : 'Guest';
+            var initials = name.split(' ').map(function(n) { return n.charAt(0); }).join('').toUpperCase().substring(0, 2);
+            avatarElement.innerHTML = initials || 'G';
+        }
+        
+        // Hide remove button
+        if (removeBtn) {
+            removeBtn.style.display = 'none';
+        }
+    }
+}
+
 function updateProfileDisplay() {
     var profile = JSON.parse(localStorage.getItem('userProfile') || '{}');
     var displayElement = document.getElementById('profileNameDisplay');
@@ -997,8 +1205,29 @@ function updateProfileDisplay() {
     }
     
     if (avatarElement) {
-        avatarElement.textContent = initials || 'G';
+        var profilePicture = localStorage.getItem('profilePicture');
+        if (profilePicture) {
+            var existingImg = avatarElement.querySelector('img');
+            if (existingImg) {
+                existingImg.src = profilePicture;
+            } else {
+                var img = document.createElement('img');
+                img.src = profilePicture;
+                img.alt = 'Profile';
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '50%';
+                avatarElement.innerHTML = '';
+                avatarElement.appendChild(img);
+            }
+        } else {
+            avatarElement.textContent = initials || 'G';
+        }
     }
+    
+    // Update profile picture in modal
+    updateProfilePictureDisplay();
 }
 
 // Custom Notification System
@@ -2567,10 +2796,13 @@ function handleDrop(e) {
         return false;
     }
     
+    var weekKey = 'week' + currentWeek;
+    if (!tasks[weekKey] || !tasks[weekKey][sourceDay]) return false;
+    
     // Find the task in source day
     var taskIndex = -1;
-    for (var i = 0; i < tasks[sourceDay].length; i++) {
-        if (tasks[sourceDay][i].id === draggedTask.id) {
+    for (var i = 0; i < tasks[weekKey][sourceDay].length; i++) {
+        if (tasks[weekKey][sourceDay][i].id === draggedTask.id) {
             taskIndex = i;
             break;
         }
@@ -2578,11 +2810,16 @@ function handleDrop(e) {
     
     if (taskIndex === -1) return;
     
+    if (!tasks[weekKey][targetDay]) {
+        tasks[weekKey][targetDay] = [];
+    }
+    
     // Move task from source to target
-    var task = tasks[sourceDay].splice(taskIndex, 1)[0];
-    tasks[targetDay].push(task);
+    var task = tasks[weekKey][sourceDay].splice(taskIndex, 1)[0];
+    tasks[weekKey][targetDay].push(task);
     
     // Save and re-render
+    markAsChanged();
     saveTasksToStorage();
     renderTasks(sourceDay);
     renderTasks(targetDay);
@@ -2599,11 +2836,14 @@ function reorderTasksInDay(day, draggedTaskId, targetTaskId, event) {
     var draggedIndex = -1;
     var targetIndex = -1;
     
-    for (var i = 0; i < tasks[day].length; i++) {
-        if (tasks[day][i].id === draggedTaskId) {
+    var weekKey = 'week' + currentWeek;
+    if (!tasks[weekKey] || !tasks[weekKey][day]) return;
+    
+    for (var i = 0; i < tasks[weekKey][day].length; i++) {
+        if (tasks[weekKey][day][i].id === draggedTaskId) {
             draggedIndex = i;
         }
-        if (tasks[day][i].id === targetTaskId) {
+        if (tasks[weekKey][day][i].id === targetTaskId) {
             targetIndex = i;
         }
     }
@@ -2611,7 +2851,7 @@ function reorderTasksInDay(day, draggedTaskId, targetTaskId, event) {
     if (draggedIndex === -1 || targetIndex === -1) return;
     
     // Remove the dragged task
-    var task = tasks[day].splice(draggedIndex, 1)[0];
+    var task = tasks[weekKey][day].splice(draggedIndex, 1)[0];
     
     // Determine where to insert based on mouse position
     var targetElement = event.target.closest('.task-item');
@@ -2626,15 +2866,16 @@ function reorderTasksInDay(day, draggedTaskId, targetTaskId, event) {
         
         // Insert above or below based on position
         if (event.clientY < midpoint) {
-            tasks[day].splice(targetIndex, 0, task);
+            tasks[weekKey][day].splice(targetIndex, 0, task);
         } else {
-            tasks[day].splice(targetIndex + 1, 0, task);
+            tasks[weekKey][day].splice(targetIndex + 1, 0, task);
         }
     } else {
-        tasks[day].splice(targetIndex, 0, task);
+        tasks[weekKey][day].splice(targetIndex, 0, task);
     }
     
     // Save and re-render
+    markAsChanged();
     saveTasksToStorage();
     renderTasks(day);
     
@@ -2934,23 +3175,34 @@ function handleFormSubmit(e) {
         description: taskDescription ? taskDescription.value : '',
         notes: taskNotes ? taskNotes.value : '',
         subtasks: getSubtasksFromForm(),
-        completed: false
+        completed: false,
+        weekNumber: currentWeek,
+        createdAt: new Date().toISOString()
     };
+    
+    var weekKey = 'week' + currentWeek;
+    if (!tasks[weekKey]) {
+        tasks[weekKey] = {
+            monday: [], tuesday: [], wednesday: [], thursday: [],
+            friday: [], saturday: [], sunday: []
+        };
+    }
     
     if (editingTaskId) {
         // Update existing task
         var index = -1;
-        for (var i = 0; i < tasks[currentDay].length; i++) {
-            if (tasks[currentDay][i].id === editingTaskId) {
+        for (var i = 0; i < tasks[weekKey][currentDay].length; i++) {
+            if (tasks[weekKey][currentDay][i].id === editingTaskId) {
                 index = i;
                 break;
             }
         }
         if (index !== -1) {
-            taskData.completed = tasks[currentDay][index].completed;
+            taskData.completed = tasks[weekKey][currentDay][index].completed;
+            taskData.createdAt = tasks[weekKey][currentDay][index].createdAt;
             // Preserve existing subtask completion states
-            if (tasks[currentDay][index].subtasks) {
-                var oldSubtasks = tasks[currentDay][index].subtasks;
+            if (tasks[weekKey][currentDay][index].subtasks) {
+                var oldSubtasks = tasks[weekKey][currentDay][index].subtasks;
                 for (var i = 0; i < taskData.subtasks.length; i++) {
                     for (var j = 0; j < oldSubtasks.length; j++) {
                         if (taskData.subtasks[i].text === oldSubtasks[j].text) {
@@ -2961,15 +3213,16 @@ function handleFormSubmit(e) {
                     }
                 }
             }
-            tasks[currentDay][index] = taskData;
+            tasks[weekKey][currentDay][index] = taskData;
         }
         playSound('click');
     } else {
         // Add new task
-        tasks[currentDay].push(taskData);
+        tasks[weekKey][currentDay].push(taskData);
         playSound('add');
     }
     
+    markAsChanged();
     saveTasksToStorage();
     renderTasks(currentDay);
     closeTaskModal();
@@ -3027,7 +3280,15 @@ function renderTasks(day) {
     
     container.innerHTML = '';
     
-    var dayTasks = tasks[day];
+    var weekKey = 'week' + currentWeek;
+    if (!tasks[weekKey]) {
+        tasks[weekKey] = {
+            monday: [], tuesday: [], wednesday: [], thursday: [],
+            friday: [], saturday: [], sunday: []
+        };
+    }
+    
+    var dayTasks = tasks[weekKey][day] || [];
     var completedCount = 0;
     for (var i = 0; i < dayTasks.length; i++) {
         if (dayTasks[i].completed) {
@@ -3217,15 +3478,18 @@ function createTaskElement(task, day) {
 // Toggle task completion
 function toggleTaskComplete(day, taskId) {
     playSound('complete');
-    for (var i = 0; i < tasks[day].length; i++) {
-        if (tasks[day][i].id === taskId) {
-            var wasCompleted = tasks[day][i].completed;
-            tasks[day][i].completed = !tasks[day][i].completed;
+    var weekKey = 'week' + currentWeek;
+    if (!tasks[weekKey] || !tasks[weekKey][day]) return;
+    
+    for (var i = 0; i < tasks[weekKey][day].length; i++) {
+        if (tasks[weekKey][day][i].id === taskId) {
+            var wasCompleted = tasks[weekKey][day][i].completed;
+            tasks[weekKey][day][i].completed = !tasks[weekKey][day][i].completed;
             
             // Show appreciation and award coins when task is completed
-            if (!wasCompleted && tasks[day][i].completed) {
+            if (!wasCompleted && tasks[weekKey][day][i].completed) {
                 // Award coins for completing task
-                addCoins(COINS_PER_TASK, 'Completed task: ' + tasks[day][i].title);
+                addCoins(COINS_PER_TASK, 'Completed task: ' + tasks[weekKey][day][i].title);
                 
                 var profile = JSON.parse(localStorage.getItem('userProfile') || '{}');
                 var name = profile.name && profile.name.trim() !== '' ? profile.name : '';
@@ -3238,11 +3502,12 @@ function toggleTaskComplete(day, taskId) {
                 ];
                 var randomMessage = messages[Math.floor(Math.random() * messages.length)];
                 showNotification(randomMessage, 'success');
-            } else if (wasCompleted && !tasks[day][i].completed) {
+            } else if (wasCompleted && !tasks[weekKey][day][i].completed) {
                 // Remove coins if uncompleting task
                 removeCoins(COINS_PER_TASK);
             }
             
+            markAsChanged();
             saveTasksToStorage();
             renderTasks(day);
             updateHeaderStats();
@@ -3310,10 +3575,13 @@ function editTask(day, taskId) {
     currentDay = day;
     editingTaskId = taskId;
     
+    var weekKey = 'week' + currentWeek;
+    if (!tasks[weekKey] || !tasks[weekKey][day]) return;
+    
     var task = null;
-    for (var i = 0; i < tasks[day].length; i++) {
-        if (tasks[day][i].id === taskId) {
-            task = tasks[day][i];
+    for (var i = 0; i < tasks[weekKey][day].length; i++) {
+        if (tasks[weekKey][day][i].id === taskId) {
+            task = tasks[weekKey][day][i];
             break;
         }
     }
@@ -3368,14 +3636,18 @@ function deleteTask(day, taskId) {
         
         playSound('delete');
         
+        var weekKey = 'week' + currentWeek;
+        if (!tasks[weekKey] || !tasks[weekKey][day]) return;
+        
         var newTasks = [];
-        for (var i = 0; i < tasks[day].length; i++) {
-            if (tasks[day][i].id !== taskId) {
-                newTasks.push(tasks[day][i]);
+        for (var i = 0; i < tasks[weekKey][day].length; i++) {
+            if (tasks[weekKey][day][i].id !== taskId) {
+                newTasks.push(tasks[weekKey][day][i]);
             }
         }
-        tasks[day] = newTasks;
+        tasks[weekKey][day] = newTasks;
         
+        markAsChanged();
         saveTasksToStorage();
         renderTasks(day);
         showNotification('Task deleted successfully!', 'success');
@@ -3385,6 +3657,7 @@ function deleteTask(day, taskId) {
 // Save tasks to localStorage
 function saveTasksToStorage() {
     localStorage.setItem('weeklyTasks', JSON.stringify(tasks));
+    localStorage.setItem('currentWeek', currentWeek);
 }
 
 // Load tasks from localStorage
@@ -3395,7 +3668,27 @@ function loadTasksFromStorage() {
             tasks = JSON.parse(stored);
         } catch (e) {
             console.error('Error loading tasks from storage:', e);
+            tasks = {};
         }
+    }
+    
+    var savedWeek = localStorage.getItem('currentWeek');
+    if (savedWeek) {
+        currentWeek = parseInt(savedWeek);
+    }
+    
+    // Initialize current week if it doesn't exist
+    var weekKey = 'week' + currentWeek;
+    if (!tasks[weekKey]) {
+        tasks[weekKey] = {
+            monday: [],
+            tuesday: [],
+            wednesday: [],
+            thursday: [],
+            friday: [],
+            saturday: [],
+            sunday: []
+        };
     }
 }
 
@@ -3435,10 +3728,13 @@ function linkifyText(text) {
 
 // Function to show task details modal
 function showTaskDetails(day, taskId) {
+    var weekKey = 'week' + currentWeek;
+    if (!tasks[weekKey] || !tasks[weekKey][day]) return;
+    
     var task = null;
-    for (var i = 0; i < tasks[day].length; i++) {
-        if (tasks[day][i].id === taskId) {
-            task = tasks[day][i];
+    for (var i = 0; i < tasks[weekKey][day].length; i++) {
+        if (tasks[weekKey][day][i].id === taskId) {
+            task = tasks[weekKey][day][i];
             break;
         }
     }
