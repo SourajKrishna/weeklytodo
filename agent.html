@@ -26,6 +26,21 @@
     </script>
 </head>
 <body>
+    <div class="background-gradient"></div>
+    
+    <!-- Floating Particles -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+    
     <div class="container">
         <!-- Header -->
         <header class="ai-header">
@@ -108,36 +123,10 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Duplicate Section -->
+                                <!-- Reset Week Section -->
                                 <div class="cmd-section">
-                                    <div class="cmd-header"><i class="fas fa-copy"></i> Duplicate Tasks</div>
+                                    <div class="cmd-header"><i class="fas fa-sync-alt"></i> Reset Week</div>
                                     <div class="cmd-buttons">
-                                        <div class="cmd-copy-row">
-                                            <select id="duplicateFromDay" class="cmd-select">
-                                                <option value="">From</option>
-                                                <option value="monday">Monday</option>
-                                                <option value="tuesday">Tuesday</option>
-                                                <option value="wednesday">Wednesday</option>
-                                                <option value="thursday">Thursday</option>
-                                                <option value="friday">Friday</option>
-                                                <option value="saturday">Saturday</option>
-                                                <option value="sunday">Sunday</option>
-                                            </select>
-                                            <i class="fas fa-arrow-right cmd-arrow"></i>
-                                            <select id="duplicateToDay" class="cmd-select">
-                                                <option value="">To</option>
-                                                <option value="monday">Monday</option>
-                                                <option value="tuesday">Tuesday</option>
-                                                <option value="wednesday">Wednesday</option>
-                                                <option value="thursday">Thursday</option>
-                                                <option value="friday">Friday</option>
-                                                <option value="saturday">Saturday</option>
-                                                <option value="sunday">Sunday</option>
-                                            </select>
-                                            <button class="cmd-btn cmd-primary" onclick="duplicateTasks()">
-                                                <i class="fas fa-clone"></i> Copy
-                                            </button>
-                                        </div>
                                         <button class="cmd-btn cmd-secondary" onclick="duplicateAllToNextWeek()">
                                             <i class="fas fa-sync-alt"></i> Reset Week (Keep Tasks, Clear Progress)
                                         </button>
@@ -259,6 +248,7 @@
         </div>
     </div>
 
+    <script src="custom-dropdown.js"></script>
     <script src="agent.js"></script>
 </body>
 </html>

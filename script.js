@@ -1283,6 +1283,34 @@ function closeConfirm(confirmed) {
     }
 }
 
+// Custom modal functions
+function showCustomModal(htmlContent) {
+    var modal = document.getElementById('customModal');
+    var modalContent = document.getElementById('customModalContent');
+    
+    if (!modal || !modalContent) return;
+    
+    modalContent.innerHTML = htmlContent;
+    modal.classList.add('active');
+    
+    // Add click outside to close
+    setTimeout(function() {
+        modal.onclick = function(e) {
+            if (e.target.id === 'customModal') {
+                closeCustomModal();
+            }
+        };
+    }, 10);
+}
+
+function closeCustomModal() {
+    var modal = document.getElementById('customModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.onclick = null;
+    }
+}
+
 // Export tasks
 function exportTasks() {
     var dataStr = JSON.stringify(tasks, null, 2);
@@ -1348,6 +1376,125 @@ function handleFileImport(event) {
     };
     
     reader.readAsText(file);
+}
+
+// Generate shareable link
+function generateShareLink() {
+    try {
+        // Get current tasks data
+        var shareData = {
+            tasks: tasks,
+            exportDate: new Date().toISOString(),
+            version: '2.1.0'
+        };
+        
+        // Convert to base64 for easy sharing
+        var jsonString = JSON.stringify(shareData);
+        var base64Data = btoa(encodeURIComponent(jsonString));
+        
+        // Store the share code
+        var shareCode = 'WT-' + base64Data;
+        
+        // Display the share link
+        var shareLinkDisplay = document.getElementById('shareLinkDisplay');
+        var shareLinkInput = document.getElementById('shareLinkInput');
+        
+        if (shareLinkDisplay && shareLinkInput) {
+            shareLinkInput.value = shareCode;
+            shareLinkDisplay.style.display = 'flex';
+            
+            showNotification('Share code generated! Copy and share it with others.', 'success');
+        }
+    } catch (error) {
+        showNotification('Error generating share link. Please try again.', 'error');
+        console.error('Share link generation error:', error);
+    }
+}
+
+// Copy share link to clipboard
+function copyShareLink() {
+    var shareLinkInput = document.getElementById('shareLinkInput');
+    if (shareLinkInput) {
+        shareLinkInput.select();
+        shareLinkInput.setSelectionRange(0, 99999); // For mobile devices
+        
+        try {
+            document.execCommand('copy');
+            showNotification('Share code copied to clipboard!', 'success');
+        } catch (error) {
+            // Fallback for modern browsers
+            navigator.clipboard.writeText(shareLinkInput.value).then(function() {
+                showNotification('Share code copied to clipboard!', 'success');
+            }).catch(function() {
+                showNotification('Failed to copy. Please copy manually.', 'error');
+            });
+        }
+    }
+}
+
+// Import shared data
+function importSharedData() {
+    var shareCodeInput = document.getElementById('shareCodeInput');
+    if (!shareCodeInput || !shareCodeInput.value.trim()) {
+        showNotification('Please paste a share code first.', 'error');
+        return;
+    }
+    
+    try {
+        var shareCode = shareCodeInput.value.trim();
+        
+        // Validate share code format
+        if (!shareCode.startsWith('WT-')) {
+            showNotification('Invalid share code format.', 'error');
+            return;
+        }
+        
+        // Remove prefix and decode
+        var base64Data = shareCode.substring(3);
+        var jsonString = decodeURIComponent(atob(base64Data));
+        var shareData = JSON.parse(jsonString);
+        
+        // Validate the data structure
+        if (!shareData.tasks || typeof shareData.tasks !== 'object') {
+            showNotification('Invalid share data structure.', 'error');
+            return;
+        }
+        
+        var validDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        var isValid = true;
+        
+        for (var i = 0; i < validDays.length; i++) {
+            var day = validDays[i];
+            if (!shareData.tasks[day] || !Array.isArray(shareData.tasks[day])) {
+                isValid = false;
+                break;
+            }
+        }
+        
+        if (!isValid) {
+            showNotification('Invalid tasks data in share code.', 'error');
+            return;
+        }
+        
+        // Confirm before importing
+        var exportDate = shareData.exportDate ? new Date(shareData.exportDate).toLocaleDateString() : 'Unknown';
+        showConfirm(
+            'This will replace all your current tasks with the shared data (Exported: ' + exportDate + '). Are you sure?',
+            function(confirmed) {
+                if (confirmed) {
+                    tasks = shareData.tasks;
+                    saveTasksToStorage();
+                    renderAllTasks();
+                    shareCodeInput.value = '';
+                    showNotification('Shared data imported successfully!', 'success');
+                    closeProfileModal();
+                }
+            }
+        );
+    } catch (error) {
+        showNotification('Error importing shared data. Please check the share code.', 'error');
+        console.error('Import shared data error:', error);
+    }
 }
 
 // Filter functions
@@ -2777,10 +2924,10 @@ function handleDrop(e) {
         var targetDay = targetTaskElement.getAttribute('data-day');
         var sourceDay = draggedTask.day;
         
-        // Reorder within same day
+        // Same day - show move or duplicate dialog
         if (sourceDay === targetDay) {
             var targetTaskId = parseInt(targetTaskElement.getAttribute('data-task-id'));
-            reorderTasksInDay(sourceDay, draggedTask.id, targetTaskId, e);
+            showDragActionModal(sourceDay, targetDay, draggedTask.id, targetTaskId, e, true);
             draggedTask = null;
             return false;
         }
@@ -2796,13 +2943,75 @@ function handleDrop(e) {
         return false;
     }
     
+    // Different day - show move or duplicate dialog
+    showDragActionModal(sourceDay, targetDay, draggedTask.id, null, e, false);
+    draggedTask = null;
+    return false;
+}
+
+// Show drag action modal (Move or Duplicate)
+function showDragActionModal(sourceDay, targetDay, taskId, targetTaskId, event, isSameDay) {
     var weekKey = 'week' + currentWeek;
-    if (!tasks[weekKey] || !tasks[weekKey][sourceDay]) return false;
+    if (!tasks[weekKey] || !tasks[weekKey][sourceDay]) return;
     
-    // Find the task in source day
+    var task = null;
+    for (var i = 0; i < tasks[weekKey][sourceDay].length; i++) {
+        if (tasks[weekKey][sourceDay][i].id === taskId) {
+            task = tasks[weekKey][sourceDay][i];
+            break;
+        }
+    }
+    
+    if (!task) return;
+    
+    var actionText = isSameDay ? 'reorder within ' + capitalizeFirstLetter(sourceDay) : 'to ' + capitalizeFirstLetter(targetDay);
+    
+    var modalContent = 
+        '<div class="drag-action-modal">' +
+            '<div class="drag-modal-icon">' +
+                '<i class="fas fa-hand-rock"></i>' +
+            '</div>' +
+            '<h2 class="drag-modal-title">Choose Action</h2>' +
+            '<p class="drag-modal-task">' +
+                '<i class="fas fa-quote-left"></i> ' + escapeHtml(task.title) + ' <i class="fas fa-quote-right"></i>' +
+            '</p>' +
+            '<p class="drag-modal-subtitle">What would you like to do ' + actionText + '?</p>' +
+            '<div class="drag-action-buttons">' +
+                '<button class="drag-action-card move-card" onclick="executeDragAction(\'' + sourceDay + '\', \'' + targetDay + '\', ' + taskId + ', ' + (targetTaskId || 'null') + ', ' + isSameDay + ', false, ' + (event ? event.clientY : 0) + ')">' +
+                    '<div class="drag-card-icon move-icon">' +
+                        '<i class="fas fa-arrows-alt"></i>' +
+                    '</div>' +
+                    '<div class="drag-card-content">' +
+                        '<h3>Move</h3>' +
+                        '<p>' + (isSameDay ? 'Reorder task position' : 'Move to ' + capitalizeFirstLetter(targetDay)) + '</p>' +
+                    '</div>' +
+                '</button>' +
+                '<button class="drag-action-card duplicate-card" onclick="executeDragAction(\'' + sourceDay + '\', \'' + targetDay + '\', ' + taskId + ', ' + (targetTaskId || 'null') + ', ' + isSameDay + ', true, ' + (event ? event.clientY : 0) + ')">' +
+                    '<div class="drag-card-icon duplicate-icon">' +
+                        '<i class="fas fa-clone"></i>' +
+                    '</div>' +
+                    '<div class="drag-card-content">' +
+                        '<h3>Duplicate</h3>' +
+                        '<p>' + (isSameDay ? 'Create a copy here' : 'Copy to ' + capitalizeFirstLetter(targetDay)) + '</p>' +
+                    '</div>' +
+                '</button>' +
+            '</div>' +
+            '<button class="drag-cancel-btn" onclick="closeCustomModal()">' +
+                '<i class="fas fa-times"></i> Cancel' +
+            '</button>' +
+        '</div>';
+    
+    showCustomModal(modalContent);
+}
+
+// Execute drag action (move or duplicate)
+function executeDragAction(sourceDay, targetDay, taskId, targetTaskId, isSameDay, isDuplicate, clientY) {
+    var weekKey = 'week' + currentWeek;
+    if (!tasks[weekKey] || !tasks[weekKey][sourceDay]) return;
+    
     var taskIndex = -1;
     for (var i = 0; i < tasks[weekKey][sourceDay].length; i++) {
-        if (tasks[weekKey][sourceDay][i].id === draggedTask.id) {
+        if (tasks[weekKey][sourceDay][i].id === taskId) {
             taskIndex = i;
             break;
         }
@@ -2810,76 +3019,150 @@ function handleDrop(e) {
     
     if (taskIndex === -1) return;
     
-    if (!tasks[weekKey][targetDay]) {
-        tasks[weekKey][targetDay] = [];
+    var task = tasks[weekKey][sourceDay][taskIndex];
+    
+    if (isSameDay) {
+        // Reorder within same day
+        var draggedIndex = taskIndex;
+        var targetIndex = -1;
+        
+        for (var i = 0; i < tasks[weekKey][sourceDay].length; i++) {
+            if (tasks[weekKey][sourceDay][i].id === targetTaskId) {
+                targetIndex = i;
+                break;
+            }
+        }
+        
+        if (targetIndex === -1) return;
+        
+        if (isDuplicate) {
+            // Duplicate within same day
+            var duplicatedTask = deepCopyTask(task);
+            duplicatedTask.id = Date.now();
+            duplicatedTask.completed = false;
+            
+            // Insert at target position
+            if (draggedIndex < targetIndex) {
+                tasks[weekKey][sourceDay].splice(targetIndex + 1, 0, duplicatedTask);
+            } else {
+                tasks[weekKey][sourceDay].splice(targetIndex, 0, duplicatedTask);
+            }
+            
+            showNotification('Task duplicated successfully', 'success');
+        } else {
+            // Move (reorder)
+            var movedTask = tasks[weekKey][sourceDay].splice(draggedIndex, 1)[0];
+            
+            // Recalculate target index after removal
+            if (draggedIndex < targetIndex) {
+                targetIndex--;
+            }
+            
+            // Determine position based on clientY if available
+            var targetElement = document.querySelector('[data-task-id="' + targetTaskId + '"]');
+            if (targetElement && clientY) {
+                var rect = targetElement.getBoundingClientRect();
+                var midpoint = rect.top + rect.height / 2;
+                
+                if (clientY < midpoint) {
+                    tasks[weekKey][sourceDay].splice(targetIndex, 0, movedTask);
+                } else {
+                    tasks[weekKey][sourceDay].splice(targetIndex + 1, 0, movedTask);
+                }
+            } else {
+                tasks[weekKey][sourceDay].splice(targetIndex, 0, movedTask);
+            }
+            
+            showNotification('Task reordered successfully', 'success');
+        }
+        
+        markAsChanged();
+        saveTasksToStorage();
+        renderTasks(sourceDay);
+    } else {
+        // Different day
+        if (!tasks[weekKey][targetDay]) {
+            tasks[weekKey][targetDay] = [];
+        }
+        
+        if (isDuplicate) {
+            // Duplicate to target day
+            var duplicatedTask = deepCopyTask(task);
+            duplicatedTask.id = Date.now();
+            duplicatedTask.completed = false;
+            tasks[weekKey][targetDay].push(duplicatedTask);
+            
+            showNotification('Task duplicated to ' + capitalizeFirstLetter(targetDay), 'success');
+            renderTasks(targetDay);
+        } else {
+            // Move to target day
+            var movedTask = tasks[weekKey][sourceDay].splice(taskIndex, 1)[0];
+            tasks[weekKey][targetDay].push(movedTask);
+            
+            showNotification('Task moved to ' + capitalizeFirstLetter(targetDay), 'success');
+            renderTasks(sourceDay);
+            renderTasks(targetDay);
+        }
+        
+        markAsChanged();
+        saveTasksToStorage();
     }
     
-    // Move task from source to target
-    var task = tasks[weekKey][sourceDay].splice(taskIndex, 1)[0];
-    tasks[weekKey][targetDay].push(task);
-    
-    // Save and re-render
-    markAsChanged();
-    saveTasksToStorage();
-    renderTasks(sourceDay);
-    renderTasks(targetDay);
-    
-    showNotification('Task moved to ' + capitalizeFirstLetter(targetDay), 'success');
-    
-    draggedTask = null;
-    return false;
+    closeCustomModal();
+    playSound('success');
 }
 
-// Reorder tasks within the same day
-function reorderTasksInDay(day, draggedTaskId, targetTaskId, event) {
-    // Find indices
-    var draggedIndex = -1;
-    var targetIndex = -1;
+// Deep copy task with all properties
+function deepCopyTask(task) {
+    var copy = {
+        id: task.id,
+        title: task.title,
+        description: task.description || '',
+        completed: task.completed,
+        priority: task.priority,
+        category: task.category,
+        period: task.period || '',
+        time: task.time || '',
+        dueDate: task.dueDate || '',
+        notes: task.notes || '',
+        subtasks: [],
+        createdAt: new Date().toISOString()
+    };
     
-    var weekKey = 'week' + currentWeek;
-    if (!tasks[weekKey] || !tasks[weekKey][day]) return;
-    
-    for (var i = 0; i < tasks[weekKey][day].length; i++) {
-        if (tasks[weekKey][day][i].id === draggedTaskId) {
-            draggedIndex = i;
-        }
-        if (tasks[weekKey][day][i].id === targetTaskId) {
-            targetIndex = i;
-        }
-    }
-    
-    if (draggedIndex === -1 || targetIndex === -1) return;
-    
-    // Remove the dragged task
-    var task = tasks[weekKey][day].splice(draggedIndex, 1)[0];
-    
-    // Determine where to insert based on mouse position
-    var targetElement = event.target.closest('.task-item');
-    if (targetElement) {
-        var rect = targetElement.getBoundingClientRect();
-        var midpoint = rect.top + rect.height / 2;
-        
-        // Recalculate target index after removal
-        if (draggedIndex < targetIndex) {
-            targetIndex--;
-        }
-        
-        // Insert above or below based on position
-        if (event.clientY < midpoint) {
-            tasks[weekKey][day].splice(targetIndex, 0, task);
+    // Deep copy subtasks
+    if (task.subtasks && task.subtasks.length > 0) {
+        if (task.subtasks[0].name !== undefined && task.subtasks[0].items !== undefined) {
+            // New grouped format
+            for (var g = 0; g < task.subtasks.length; g++) {
+                var group = task.subtasks[g];
+                var newGroup = {
+                    name: group.name,
+                    items: []
+                };
+                if (group.items) {
+                    for (var i = 0; i < group.items.length; i++) {
+                        newGroup.items.push({
+                            id: Date.now() + g * 1000 + i,
+                            text: group.items[i].text,
+                            completed: false
+                        });
+                    }
+                }
+                copy.subtasks.push(newGroup);
+            }
         } else {
-            tasks[weekKey][day].splice(targetIndex + 1, 0, task);
+            // Old flat format
+            for (var i = 0; i < task.subtasks.length; i++) {
+                copy.subtasks.push({
+                    id: Date.now() + i,
+                    text: task.subtasks[i].text,
+                    completed: false
+                });
+            }
         }
-    } else {
-        tasks[weekKey][day].splice(targetIndex, 0, task);
     }
     
-    // Save and re-render
-    markAsChanged();
-    saveTasksToStorage();
-    renderTasks(day);
-    
-    showNotification('Task reordered successfully', 'success');
+    return copy;
 }
 
 // Open task modal

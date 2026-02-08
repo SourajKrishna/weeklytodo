@@ -538,60 +538,6 @@ function deleteTaskCount() {
 }
 
 // Duplicate tasks from one day to another
-function duplicateTasks() {
-    var fromDay = document.getElementById('duplicateFromDay').value;
-    var toDay = document.getElementById('duplicateToDay').value;
-    
-    if (!fromDay || !toDay) {
-        showNotification('Select both days to copy tasks', 'warning', 'Select Days');
-        return;
-    }
-    
-    if (fromDay === toDay) {
-        showNotification('Choose different days', 'warning', 'Same Day');
-        return;
-    }
-    
-    var tasks = getTasks();
-    var sourceTasks = tasks[fromDay];
-    var fromName = fromDay.charAt(0).toUpperCase() + fromDay.slice(1);
-    var toName = toDay.charAt(0).toUpperCase() + toDay.slice(1);
-    
-    if (sourceTasks.length === 0) {
-        showNotification('No tasks on ' + fromName + ' to copy', 'info', 'Empty Day');
-        return;
-    }
-    
-    // Create duplicates with new IDs
-    var duplicates = sourceTasks.map(function(task, index) {
-        return {
-            id: Date.now() + index,
-            title: task.title,
-            completed: false,
-            priority: task.priority,
-            category: task.category,
-            period: task.period,
-            dueDate: '',
-            notes: task.notes || '',
-            subtasks: task.subtasks.map(function(subtask, subIndex) {
-                return {
-                    id: Date.now() + index + subIndex + 1000,
-                    text: subtask.text,
-                    completed: false
-                };
-            }),
-            createdAt: new Date().toISOString()
-        };
-    });
-    
-    tasks[toDay] = tasks[toDay].concat(duplicates);
-    saveTasks(tasks);
-    
-    showNotification(duplicates.length + ' tasks copied to ' + toName, 'success', 'Copied!');
-    document.getElementById('duplicateFromDay').value = '';
-    document.getElementById('duplicateToDay').value = '';
-}
-
 // Duplicate all tasks and reset completion status (for new week)
 function duplicateAllToNextWeek() {
     var tasks = getTasks();

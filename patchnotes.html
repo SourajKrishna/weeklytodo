@@ -14,6 +14,8 @@
             max-width: 800px;
             margin: 2rem auto;
             padding: 0 1rem;
+            position: relative;
+            z-index: 10;
         }
 
         .patchnotes-header {
@@ -161,6 +163,19 @@
 <body>
     <div class="background-gradient"></div>
     
+    <!-- Floating Particles -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+    
     <div class="patchnotes-container">
         <header class="patchnotes-header">
             <a href="index.html" class="back-btn">
@@ -171,6 +186,93 @@
                 <p>What's new in Weekly Todo</p>
             </div>
         </header>
+
+        <!-- Version 2.1.0 -->
+        <article class="version-card">
+            <div class="version-header">
+                <span class="version-tag"><i class="fas fa-star"></i> v2.1.0</span>
+                <span class="version-date">February 8, 2026</span>
+            </div>
+            <ul class="changes-list">
+                <li>
+                    <i class="fas fa-plus-circle change-new"></i>
+                    <div>
+                        <span class="change-type type-new">New</span>
+                        <strong>Drag & Drop Actions</strong> - Choose to Move or Duplicate tasks when dragging between days or reordering
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-plus-circle change-new"></i>
+                    <div>
+                        <span class="change-type type-new">New</span>
+                        <strong>Custom Glassmorphism Dropdowns</strong> - All select elements now use beautiful custom-styled dropdowns with icons
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-plus-circle change-new"></i>
+                    <div>
+                        <span class="change-type type-new">New</span>
+                        <strong>Dropdown Background Blur</strong> - Background elegantly blurs when dropdowns are active for better focus
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-sync-alt change-improved"></i>
+                    <div>
+                        <span class="change-type type-improved">Improved</span>
+                        <strong>Checkbox Design</strong> - Modern glassmorphic checkboxes with smooth animations and hover effects
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-sync-alt change-improved"></i>
+                    <div>
+                        <span class="change-type type-improved">Improved</span>
+                        <strong>Light Mode Styling</strong> - Enhanced contrast, shadows, and readability across all components
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-sync-alt change-improved"></i>
+                    <div>
+                        <span class="change-type type-improved">Improved</span>
+                        <strong>Button Styling</strong> - All buttons now have better hover states and visual feedback in both themes
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-sync-alt change-improved"></i>
+                    <div>
+                        <span class="change-type type-improved">Improved</span>
+                        <strong>Drag Action Modal</strong> - Beautiful card-based design with icons, descriptions, and smooth animations
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-trash-alt change-removed"></i>
+                    <div>
+                        <span class="change-type type-fixed">Removed</span>
+                        <strong>Task Duplication Button</strong> - Removed separate duplicate button in favor of drag & drop duplication
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-trash-alt change-removed"></i>
+                    <div>
+                        <span class="change-type type-fixed">Removed</span>
+                        <strong>Agent Duplication Section</strong> - Moved duplication functionality to intuitive drag & drop interface
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-trash-alt change-removed"></i>
+                    <div>
+                        <span class="change-type type-fixed">Removed</span>
+                        <strong>Weekly Report Button</strong> - Streamlined profile section by removing weekly reports
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-trash-alt change-removed"></i>
+                    <div>
+                        <span class="change-type type-fixed">Removed</span>
+                        <strong>Focus Mode Add Button</strong> - Cleaner focus mode interface without add task button
+                    </div>
+                </li>
+            </ul>
+        </article>
 
         <!-- Version 2.0.0 -->
         <article class="version-card">

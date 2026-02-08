@@ -14,6 +14,19 @@
 <body>
     <div class="background-gradient"></div>
     
+    <!-- Floating Particles -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+    
     <div class="container">
         <!-- Modern Header -->
         <header class="header-modern">
@@ -364,6 +377,13 @@
         </div>
     </div>
 
+    <!-- Custom Modal -->
+    <div class="modal-overlay" id="customModal">
+        <div class="modal-content" id="customModalContent">
+            <!-- Dynamic content will be inserted here -->
+        </div>
+    </div>
+
     <!-- Profile Modal -->
     <div class="modal-overlay" id="profileModal">
         <div class="modal-content profile-modal-content">
@@ -439,6 +459,51 @@
 
                 <div class="profile-divider"></div>
 
+                <!-- Data Sharing Section -->
+                <div class="profile-actions">
+                    <h4><i class="fas fa-share-nodes"></i> Share Your Data</h4>
+                    <p class="share-description">Generate a shareable link to let others import your tasks</p>
+                    
+                    <div class="share-link-section">
+                        <div class="share-link-display" id="shareLinkDisplay" style="display: none;">
+                            <input type="text" id="shareLinkInput" readonly>
+                            <button class="btn-copy" onclick="copyShareLink()" title="Copy Link">
+                                <i class="fas fa-copy"></i>
+                                <span>Copy</span>
+                            </button>
+                        </div>
+                        <button class="profile-action-btn" onclick="generateShareLink()">
+                            <i class="fas fa-link"></i>
+                            <span>Generate Share Link</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="profile-divider"></div>
+
+                <!-- Import Shared Data Section -->
+                <div class="profile-actions">
+                    <h4><i class="fas fa-cloud-arrow-down"></i> Import Shared Data</h4>
+                    <p class="share-description">Paste a share code to import tasks from another user</p>
+                    
+                    <div class="share-link-section">
+                        <div class="form-group">
+                            <textarea 
+                                id="shareCodeInput" 
+                                placeholder="Paste share code here..."
+                                rows="3"
+                                class="share-code-textarea"
+                            ></textarea>
+                        </div>
+                        <button class="profile-action-btn" onclick="importSharedData()">
+                            <i class="fas fa-file-import"></i>
+                            <span>Import Shared Data</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="profile-divider"></div>
+
                 <div class="profile-actions">
                     <h4><i class="fas fa-cog"></i> Settings & Actions</h4>
                     
@@ -447,10 +512,6 @@
                             <i class="fas fa-moon" id="themeIconProfile"></i>
                             <span id="themeText">Dark Mode</span>
                         </button>
-                        <a href="reports.html" class="profile-action-btn reports-btn">
-                            <i class="fas fa-chart-line"></i>
-                            <span>Weekly Reports</span>
-                        </a>
                         <button class="profile-action-btn" onclick="importTasks()">
                             <i class="fas fa-upload"></i>
                             <span>Import Tasks</span>
@@ -561,6 +622,7 @@
         </nav>
     </footer>
 
+    <script src="custom-dropdown.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
